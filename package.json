@@ -1,0 +1,21 @@
+{
+  "name": "yomi-drill",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "predev": "node scripts/copy-audio.mjs",
+    "dev": "vite",
+    "prebuild": "node scripts/copy-audio.mjs",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test src/core.test.mjs"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
+}
