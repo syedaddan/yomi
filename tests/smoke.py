@@ -18,6 +18,7 @@ async def main():
             if i==0: await pg.screenshot(path='shot_reveal.png')
             await pg.click('[data-rate="got"]'); await pg.wait_for_selector('#reveal')
         # phrases deck
+        await pg.click('[data-setting="decks"]')
         await pg.click('[data-deck="phr"]'); await pg.click('[data-deck="hira"]'); await pg.click('[data-deck="kata"]')
         await pg.wait_for_selector('#stage .word.phrase')
         await pg.click('#reveal'); await pg.wait_for_selector('.pitchline.phrase'); await pg.screenshot(path='shot_phrase.png')
@@ -46,9 +47,11 @@ async def main():
             await pg.click(f'[data-page="{t}"]')
             assert await pg.locator('.panel').count() == 1, f'{t} page rendered other sections'
             assert await pg.locator(f'#page-{t}').is_visible(), f'{t} page did not render'
+            assert not pg.url.endswith('.html'), f'{t} route still exposes an HTML extension: {pg.url}'
             sw = await pg.evaluate('document.documentElement.scrollWidth'); cw = await pg.evaluate('document.documentElement.clientWidth')
+            assert sw == cw, f'{t} page overflows at phone width: {sw} > {cw}'
             print('phone', t, 'scrollWidth', sw, 'clientWidth', cw)
-        await pg.click('[data-page="drill"]'); await pg.click('[data-mode="read"]'); await pg.wait_for_selector('#reveal'); await pg.click('#reveal'); await pg.screenshot(path='shot_phone.png')
+        await pg.click('[data-page="drill"]'); await pg.locator('[data-mode="read"]').click(); await pg.wait_for_selector('#reveal'); await pg.click('#reveal'); await pg.screenshot(path='shot_phone.png')
         print('ERRORS:', errs)
         await b.close()
 asyncio.run(main())

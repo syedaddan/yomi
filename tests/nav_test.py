@@ -7,6 +7,7 @@ async def main():
         errs=[]; pg.on('console', lambda m: errs.append(m.text) if 'female' in m.text else None)
         pg.on('pageerror', lambda e: errs.append('PAGEERR '+str(e)))
         await pg.goto('http://127.0.0.1:5173/'); await pg.wait_for_selector('#stage .word')
+        document_time = await pg.evaluate('performance.timeOrigin')
         w1 = await pg.inner_text('#stage .word')
         print('back disabled at start:', await pg.locator('#nav-back').is_disabled())
         await pg.click('#reveal'); await pg.click('[data-rate="got"]'); await pg.wait_for_selector('#reveal')
@@ -19,15 +20,18 @@ async def main():
         await pg.keyboard.press('ArrowRight'); await pg.wait_for_selector('#reveal')   # skip
         print('skip -> new card; session:', (await pg.inner_text('.session')).replace('\n',' '))
         # female voice
-        await pg.click('#reveal'); await pg.click('[data-voice="female"]'); await pg.wait_for_selector('.audio-cap')
-        print('caption:', (await pg.inner_text('.audio-cap'))[:60])
+        await pg.click('#reveal'); await pg.click('[data-voice="female"]')
+        print('voice info:', (await pg.locator('.voice-row .info-tooltip').inner_text())[:60])
         await pg.click('[data-play="main"]'); await pg.wait_for_timeout(1500); print('toast after play:', await pg.inner_text('#toast'))
         ok = await pg.evaluate("curAudio && curAudio.src.startsWith('blob:')") if False else None
         # pacer female
         await pg.click('[data-page="pacer"]')
-        assert pg.url.endswith('/pacer.html'), f'expected separate pacer URL, got {pg.url}'
+        assert pg.url.endswith('#/pacer'), f'expected client-side pacer route, got {pg.url}'
+        assert await pg.evaluate('performance.timeOrigin') == document_time, 'page navigation reloaded the document'
+        assert '.html' not in pg.url, f'route exposes an HTML extension: {pg.url}'
         assert await pg.locator('.panel').count() == 1
         assert await pg.locator('#page-drill').count() == 0
+        await pg.click('[data-setting="pace"]')
         await pg.click('#pace-speak')
         assert await pg.locator('#pace-speak').get_attribute('aria-pressed') == 'true'
         await pg.click('#pace-go'); await pg.wait_for_timeout(900)
@@ -37,7 +41,7 @@ async def main():
         print('prev returns:', t0==await pg.inner_text('#pace-text'))
         await pg.screenshot(path='shot_pacer2.png')
         await pg.click('[data-page="drill"]')
-        assert pg.url.endswith('/index.html'), f'expected separate drill URL, got {pg.url}'
+        assert pg.url.endswith('#/drill'), f'expected client-side drill route, got {pg.url}'
         assert await pg.locator('.panel').count() == 1
         await pg.screenshot(path='shot_nav.png')
         print('errors', errs); await b.close()

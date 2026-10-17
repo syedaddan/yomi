@@ -2,13 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { median, particleRomaji, romaji } from '../core.js';
 import { DECK_NAMES, ITEMS } from '../data.js';
 import { playItem, stopAudio } from '../audio.js';
-import { PitchLine, VoiceButtons } from './shared.jsx';
+import { InfoButton, PitchLine, VoiceButtons } from './shared.jsx';
 
-const MODES = {
-  read: 'Read the card aloud, then reveal. Your reading time is measured from the moment the card appears.',
-  flash: 'The word appears briefly, then hides. Say it from memory, then reveal. Shorten the time as you improve.',
-  sprint: 'Read as many cards as you can in 60 seconds. Tap Read it for each one you got, Misread for a slip.',
-};
 const SPRINT_MS = 60000;
 
 function chooseItem(pool, stats, recent) {
@@ -232,95 +227,13 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [active, sprint, prefs.mode, phase, item, prefs.voice, position, history, pool, store.stats]);
 
-  const themes = [...new Set(ITEMS.filter((candidate) => prefs.decks[candidate.deck])
-    .map((candidate) => `${candidate.deck}|${candidate.theme}`))];
-  const themeNameCounts = themes.reduce((counts, key) => {
-    const theme = key.split('|')[1];
-    counts[theme] = (counts[theme] || 0) + 1;
-    return counts;
-  }, {});
   const sprintScore = session.ms.length
     ? (session.mora / (session.ms.reduce((sum, value) => sum + value, 0) / 1000)).toFixed(1)
     : '–';
 
   return (
     <section className="panel" id="page-drill">
-      <div className="grid">
-        <aside className="rail">
-          <div className="card group" aria-label="Deck mix">
-            <h3>Decks to mix</h3>
-            <div className="chips">
-              {Object.entries({ hira: 'Hiragana words', kata: 'Katakana words', phr: 'Phrases' }).map(([deck, label]) => (
-                <button
-                  className={`chip${prefs.decks[deck] ? ' on' : ''}`}
-                  aria-pressed={prefs.decks[deck]}
-                  data-deck={deck}
-                  key={deck}
-                  onClick={() => {
-                    if (prefs.decks[deck] && Object.values(prefs.decks).filter(Boolean).length === 1) {
-                      notify('Keep at least one deck selected.');
-                      return;
-                    }
-                    setPreference('decks', { ...prefs.decks, [deck]: !prefs.decks[deck] });
-                    resetDrill();
-                  }}
-                >
-                  {label} <small>{ITEMS.filter((candidate) => candidate.deck === deck).length}</small>
-                </button>
-              ))}
-              <button className="chip" disabled title="Kanji decks arrive later">Kanji <small>soon</small></button>
-            </div>
-            <p className="hint">Pick any mix. Cards from every selected deck are shuffled together, and items you miss come back more often.</p>
-          </div>
-          <div className="card group">
-            <h3>Themes</h3>
-            <div className="chips">
-              {themes.map((key) => {
-                const [deck, theme] = key.split('|');
-                return (
-                  <button
-                    className={`chip${prefs.themes.includes(key) ? ' on' : ''}`}
-                    aria-pressed={prefs.themes.includes(key)}
-                    title={`${DECK_NAMES[deck]} deck`}
-                    key={key}
-                    onClick={() => {
-                      const selected = prefs.themes.includes(key)
-                        ? prefs.themes.filter((value) => value !== key)
-                        : [...prefs.themes, key];
-                      setPreference('themes', selected);
-                      resetDrill();
-                    }}
-                  >
-                    {theme}{themeNameCounts[theme] > 1 ? ` (${deck === 'hira' ? 'hiragana' : deck === 'kata' ? 'katakana' : 'phrases'})` : ''}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="hint">{prefs.themes.length ? `${prefs.themes.length} theme${prefs.themes.length > 1 ? 's' : ''} selected. Clear them all to use everything.` : 'No theme selected means all themes.'}</p>
-          </div>
-          <div className="card group">
-            <h3>Mode</h3>
-            <div className="seg">
-              {['read', 'flash', 'sprint'].map((mode) => (
-                <button key={mode} data-mode={mode} aria-pressed={prefs.mode === mode} onClick={() => { setPreference('mode', mode); resetDrill(); }}>
-                  {mode[0].toUpperCase() + mode.slice(1)}
-                </button>
-              ))}
-            </div>
-            <p className="hint">{MODES[prefs.mode]}</p>
-            {prefs.mode === 'flash' && (
-              <div className="group">
-                <label htmlFor="flash-ms" className="hint">Flash time: <b className="mono">{(prefs.flashMs / 1000).toFixed(1)}s</b></label>
-                <input id="flash-ms" type="range" min="400" max="3000" step="100" value={prefs.flashMs} onChange={(event) => setPreference('flashMs', Number(event.target.value))} />
-              </div>
-            )}
-            <label className="sw">
-              <input type="checkbox" checked={prefs.chunk} onChange={(event) => setPreference('chunk', event.target.checked)} />
-              <i />Space between phrase chunks
-            </label>
-            <button className="btn quiet" onClick={() => { setPreference('reset', true); setSlow(false); resetDrill(); }}>Reset settings</button>
-          </div>
-        </aside>
+      <div className="grid no-settings">
         <div className="card stage" id="stage" aria-live="polite">
           {prefs.mode === 'sprint' ? (
             sprint ? (
@@ -372,20 +285,22 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
                     <div className="meaning">{item.en}</div>
                     <div className="legend"><span className="lh">high (bar above)</span><span className="ll">low (bar below)</span><span>↘ pitch drops here</span></div>
                     <div className="voice-row"><span className="hint">Voice</span><VoiceButtons value={prefs.voice} onChange={(value) => setPreference('voice', value)} /></div>
-                    <div className="audio-row">
-                      <button className="btn primary" data-play="main" onClick={() => playItem(item, { voice: prefs.voice, slow, onError: notify })}>▶ Play <kbd>P</kbd></button>
-                      <button className="btn" aria-pressed={slow} onClick={() => setSlow((value) => !value)}>{slow ? 'Slow: on' : 'Slow: off'}</button>
-                      {item.alt && <button className="btn" onClick={() => playItem(item, { voice: prefs.voice, alternate: true, slow, onError: notify })}>▶ Other recording</button>}
-                    </div>
-                    <div className="audio-cap">
-                      {prefs.voice === 'female' && item.ttsF
-                        ? 'Synthetic female voice (VOICEVOX:九州そら). Its pitch is set from the dictionary accent; trust the marks over the voice when they disagree.'
-                        : item.audio
-                          ? 'Recording: Tokyo-accent male voice'
-                          : item.tts
-                            ? 'Synthetic male voice (VOICEVOX:白上虎太郎). Its pitch is set from the dictionary accent.'
-                            : 'Synthetic browser voice. It may not follow the pitch marks.'}
-                      {item.alt && '. "Other recording" is a Kansai-accent speaker, so pitch can differ from the marks.'}
+                    <div className="audio-control-group">
+                      <div className="audio-row">
+                        <button className="btn primary" data-play="main" onClick={() => playItem(item, { voice: prefs.voice, slow, onError: notify })}>▶ Play <kbd>P</kbd></button>
+                        <button className="btn" aria-pressed={slow} onClick={() => setSlow((value) => !value)}>{slow ? 'Slow: on' : 'Slow: off'}</button>
+                        {item.alt && <button className="btn" onClick={() => playItem(item, { voice: prefs.voice, alternate: true, slow, onError: notify })}>▶ Other recording</button>}
+                      </div>
+                      <InfoButton label="About these recordings">
+                        {prefs.voice === 'female' && item.ttsF
+                          ? 'Synthetic female voice (VOICEVOX:九州そら). Its pitch follows the dictionary accent; trust the marks if they disagree.'
+                          : item.audio
+                            ? 'Tokyo-accent male recording.'
+                            : item.tts
+                              ? 'Synthetic male voice (VOICEVOX:白上虎太郎). Its pitch follows the dictionary accent.'
+                              : 'Synthetic browser voice. It may not follow the pitch marks.'}
+                        {item.alt && ' The other recording is a Kansai-accent speaker, so pitch can differ from the marks.'}
+                      </InfoButton>
                     </div>
                     <p className="note">
                       {item.accents.length > 1 ? `Dictionary lists multiple accents [${item.accents.join('], [')}]. Shown: [${item.accents[0]}]. ` : ''}

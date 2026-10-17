@@ -1,6 +1,6 @@
 # Yomi Drill (読み)
 
-A small multi-page Japanese **reading trainer** for hiragana and katakana (the Kanji page is a placeholder for later).
+A small React Japanese **reading trainer** for hiragana and katakana (the Kanji section is a placeholder for later).
 Built for a learner who is preparing for class reading tests and wants to stop decoding character by character.
 
 The app is a small React site built with Vite. It runs entirely in the browser: no account, server, or backend is required. The static build is hosted with GitHub Pages.
@@ -16,21 +16,21 @@ The owner's goals (from the Claude Project "Japanese Reading"):
 | **Speed** (read words and whole phrases without stalling on characters) | Drill with timed reads, Flash mode (word hides after N ms), 60-second Sprint (mora/min), Phrase pacer (highlight moves at a set mora/s), weighted shuffle that repeats slow and missed cards |
 | **Accuracy** (pronunciation + intonation) | Every word shows pitch-accent marks (red bar above = high, blue bar below = low, ↘ = drop, ↗ = question). Audio per card: real recordings where available, otherwise VOICEVOX voices whose pitch is forced from the dictionary accent. Male/Female voice switch |
 | **Correctness** (confusable characters) | "Look-alikes" page: シ/ツ, ソ/ン, ぬ/め, ね/れ/わ, etc., with quizzes and tips. Progress page tracks per-item misses |
-| **Kanji** | Tab exists, empty ("later") |
+| **Kanji** | Section exists, empty ("later") |
 
 The user explicitly asked for **real recorded clips over TTS**. TTS is only a fallback. See section 5 for what is real and what is not.
 
 ## 2. Features (current state)
 
-- **Drill page**: mix decks freely (Hiragana words 182, Katakana words 164, Phrases 40, Kanji disabled), filter by themes (Home, Food, People, Places, Time, Nature, Body, IT & Work, Verbs, Adjectives, Tech, Food & Drink, Travel, Clothes, School & Fun, Look-alikes, Greetings, Class & Daily ...).
+- **Drill section**: mix decks freely (Hiragana 182, Katakana 164, Phrases 40, Kanji disabled), filter by themes (Home, Food, People, Places, Time, Nature, Body, IT & Work, Verbs, Adjectives, Tech, Food & Drink, Travel, Clothes, School & Fun, Look-alikes, Greetings, Class & Daily ...).
   - Modes: Read (time measured to reveal), Flash (hidden after N ms), Sprint (60 s).
   - Reveal shows pitch marks, romaji, meaning, audio controls (Voice Male/Female, Play, Slow, "Other recording" Kansai clip where present).
   - Rate: Missed / Slow / Got it (keys 1/2/3). Stats persist in `localStorage`.
   - **Back / Forward** (buttons and ← → keys). History stack of the last 100 cards; revisited cards show revealed and are never double-counted. Forward on a fresh card = Skip (no rating recorded).
   - Keys: Space/Enter reveal, P play, 1/2/3 rate, ←/→ back/forward, X (sprint miss).
-- **Phrase pacer page**: pick a phrase, set speed (mora/s), highlight walks the moras. "Speak along" plays a VOICEVOX clip and the highlight is driven by `audio.currentTime` against exact per-mora onset times (so voice and highlight cannot drift). Voice Male/Female. Previous / Next (B / N, ← →).
-- **Look-alikes page**: 20-item quizzes over confusable sets.
-- **Progress page**: per-session and saved stats (see the page).
+- **Phrase pacer section**: pick a phrase, set speed (mora/s), highlight walks the moras. "Speak along" plays a VOICEVOX clip and the highlight is driven by `audio.currentTime` against exact per-mora onset times (so voice and highlight cannot drift). Voice Male/Female. Previous / Next (B / N, ← →).
+- **Look-alikes section**: 20-item quizzes over confusable sets.
+- **Progress section**: per-session and saved stats (see the section).
 - Light/dark theme (follows OS), phone-friendly layout, keyboard friendly.
 
 ## 3. Repository layout
@@ -38,22 +38,19 @@ The user explicitly asked for **real recorded clips over TTS**. TTS is only a fa
 ```
 yomi-drill/
   README.md
-  index.html             Drill page and Vite entry
-  pacer.html             Phrase pacer page
-  alike.html             Look-alikes page
-  progress.html          Progress page
-  kanji.html             Kanji placeholder page
+  index.html             Vite entry for the React app
   package.json           familiar npm commands and dependencies
   package-lock.json      exact installed package versions
   vite.config.js         static build settings, including GitHub Pages base path
   .github/workflows/     GitHub Pages build-and-publish workflow
   src/
-    App.jsx              page shell, page selection, and shared preferences
+    App.jsx              app shell, client-side routing, and shared preferences
     components/
       Drill.jsx          card modes, rating, history, and sprint
       Pacer.jsx          phrase selection and synchronized playback
       StudyTabs.jsx      look-alikes, progress, and kanji placeholder
-      shared.jsx         pitch display, page navigation, and shared controls
+      SettingsBar.jsx    fixed bottom settings dock and expandable controls
+      shared.jsx         pitch display, navigation, and shared controls
     core.js              pure mora, pitch, and romaji helpers
     data.js              deck data mapping and look-alike sets
     storage.js           local preferences and progress
@@ -81,8 +78,10 @@ yomi-drill/
 
 ## 4. Architecture and data
 
-- **React** renders the app and keeps interface state in components. Each section is a separate HTML page with its own URL; shared navigation uses regular links and browser history. Feature components live in separate files.
-- **Vite** is the local development server and production builder; it bundles the React code into regular static HTML, CSS, and JavaScript. It builds every HTML page for GitHub Pages. Vite does not run on the hosted site.
+- **React** renders the app and keeps interface state in components. Sections use client-side hash routes (`/#/drill`, `/#/pacer`, `/#/alike`, `/#/progress`, `/#/kanji`), so navigation switches the active React view without reloading the document or exposing `.html` routes. Browser back/forward works normally.
+- **Vite** is the local development server and production builder; it bundles the React code into regular static HTML, CSS, and JavaScript. GitHub Pages serves the single app entry; Vite does not run on the hosted site.
+- The compact top bar holds section navigation, display toggles, and Drill mode buttons. A fixed bottom settings dock is available throughout the app. Large option lists open into small panels; selected Drill themes stay visible as removable chips with a selected/available count. Reset icons restore individual setting groups, and **Reset all** restores all preferences without deleting study progress.
+- Deck, mode, script, and voice choices use compact pressed-state buttons rather than radio controls. Voice and audio details are available from keyboard-accessible `i` information buttons.
 - `out/data.json` is imported into the app at build time. Before starting Vite or building, an npm pre-script copies `out/audio/` to the ignored `public/audio/`; Vite then serves and bundles those static audio files.
 - `data.json` schema:
   ```
@@ -112,7 +111,7 @@ yomi-drill/
    - Kokoro voices 36-64% → rejected (not controllable).
    - **VOICEVOX 白上虎太郎 (male, style 12): 81%** (142/175 on the deck). Used for male.
    - **VOICEVOX 九州そら (female, style 16): 81%** (94/116 sampled). Used for female. Other female candidates on the same test: もち子さん 79%, 冥鳴ひまり 70%, 四国めたん 69%, 春日部つむぎ 62%.
-   So about 1 word in 5 will sound off against the marks. **The marks are the reference, the voice is a guide.** The caption in the UI says this.
+   So about 1 word in 5 will sound off against the marks. **The marks are the reference, the voice is a guide.** The voice information button in the UI explains this.
 5. **Speak-along bug fixed**: the old version used browser TTS and a timer, so the voice drifted from the highlight. Now clip-based and `currentTime`-driven.
 6. **VOICEVOX trick that matters**: do NOT pass a kana string with an accent mark (it splits phrases). Build `accent_phrases` yourself (`accent = n` for flat words, else `a`), call `POST /mora_data`, set `is_interrogative` on the last phrase for questions, then `/synthesis`. See `tts/vv_lib.py: build_query`. Intonation scale 1.3.
 7. **Back/Forward + voice selector + female voice + README** (latest round).
@@ -195,6 +194,6 @@ Check each script's header for exact arguments; they use `ROOT`-relative paths, 
 
 - Edit the React components and styles under `src/`; do not edit generated `public/audio/` or `dist/`.
 - Keep `src/core.js` pure and covered by `npm test`; add a test with every change to mora, pitch, or romaji logic.
-- Keep the honesty about pitch quality in the UI captions. Do not claim the synthetic voices are always right.
+- Keep the honesty about pitch quality in the UI voice information. Do not claim the synthetic voices are always right.
 - Never double-count stats when a card is revisited; the drill history and rating state handle this.
 - The owner is an ML/CV engineer learning Japanese from zero; reading tests are coming up in class. Keep the UI student friendly, plain English, no jargon beyond "mora" (which is explained in the pacer).

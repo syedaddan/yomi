@@ -12,6 +12,7 @@ async def main():
         page.on('pageerror', lambda error: errors.append(str(error)))
         await page.goto(OUT)
         await page.click('[data-page="pacer"]')
+        await page.click('[data-setting="pace"]')
         await page.evaluate("""() => {
           const slider = document.querySelector('#pace-rate');
           slider.value = '8';

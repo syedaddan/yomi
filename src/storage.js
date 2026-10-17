@@ -12,6 +12,8 @@ export const DEFAULT_PREFS = {
   paceChunk: true,
   paceSpeak: false,
   paceTheme: '',
+  pacePhraseId: '',
+  alikeScript: 'both',
   voice: 'male',
 };
 

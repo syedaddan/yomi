@@ -27,10 +27,15 @@ function pickQuestion(script, confusions) {
   return { glyph, choices: shuffle(set.glyphs), startedAt: performance.now() };
 }
 
-function LookalikeTab({ store, setStore, setPreference, notify, active }) {
-  const [script, setScript] = useState(store.prefs.alikeScript || 'both');
+function LookalikeTab({ store, setStore, active }) {
+  const script = store.prefs.alikeScript || 'both';
   const [round, setRound] = useState(null);
   const [locked, setLocked] = useState(false);
+
+  useEffect(() => {
+    setRound(null);
+    setLocked(false);
+  }, [script]);
 
   function startRound() {
     setRound({ index: 0, total: 20, correct: 0, times: [], pairs: {}, question: pickQuestion(script, store.conf), done: false });
@@ -91,17 +96,6 @@ function LookalikeTab({ store, setStore, setPreference, notify, active }) {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [active, round, script, locked]);
 
-  function chooseScript(value) {
-    setScript(value);
-    setPreference('alikeScript', value);
-    setRound(null);
-  }
-
-  const choices = [
-    ['both', 'Both scripts'],
-    ['hira', 'Hiragana only'],
-    ['kata', 'Katakana only'],
-  ];
   const worst = round?.done ? Object.entries(round.pairs).sort((a, b) => b[1] - a[1])[0] : null;
 
   return (
@@ -126,11 +120,6 @@ function LookalikeTab({ store, setStore, setPreference, notify, active }) {
               ) : (
                 <p className="note">One character appears; pick its reading. Pairs you confuse show up more often in future rounds and Progress.</p>
               )}
-              <div className="chips">
-                {choices.map(([key, label]) => (
-                  <button className={`chip${script === key ? ' on' : ''}`} aria-pressed={script === key} key={key} onClick={() => chooseScript(key)}>{label}</button>
-                ))}
-              </div>
               <button className="btn primary" id="alike-go" onClick={startRound}>{round?.done ? 'Another round' : 'Start'} <kbd>Space</kbd></button>
             </div>
           ) : (

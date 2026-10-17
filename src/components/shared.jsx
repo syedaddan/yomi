@@ -32,10 +32,49 @@ export function PitchLine({ item, showRomaji = true, showMarks = true }) {
 
 export function VoiceButtons({ value, onChange, attribute = 'data-voice' }) {
   return (
-    <div className="seg two" role="group" aria-label="Voice">
-      <button {...{ [attribute]: 'male' }} aria-pressed={value !== 'female'} onClick={() => onChange('male')}>Male</button>
-      <button {...{ [attribute]: 'female' }} aria-pressed={value === 'female'} onClick={() => onChange('female')}>Female</button>
+    <div className="choice-field">
+      <div className="choice-group compact" role="group" aria-label="Voice">
+        <button className="choice-button" {...{ [attribute]: 'male' }} aria-pressed={value !== 'female'} onClick={() => onChange('male')}>Male</button>
+        <button className="choice-button" {...{ [attribute]: 'female' }} aria-pressed={value === 'female'} onClick={() => onChange('female')}>Female</button>
+      </div>
+      <InfoButton label="Voice information">
+        Real recordings are used when available. Synthetic male and female clips use VOICEVOX:白上虎太郎 and VOICEVOX:九州そら; their pitch may differ from the dictionary marks. Some alternate recordings use a Kansai accent.
+      </InfoButton>
     </div>
+  );
+}
+
+export function ChoiceButtons({ value, options, onChange, label, multiple = false }) {
+  return (
+    <div className="choice-group compact" role="group" aria-label={label}>
+      {options.map(([key, text, detail]) => {
+        const selected = multiple ? value.includes(key) : value === key;
+        return (
+          <button
+            className="choice-button"
+            aria-pressed={selected}
+            data-choice={key}
+            data-deck={label === 'Decks' ? key : undefined}
+            data-mode={label === 'Reading mode' ? key : undefined}
+            key={key}
+            onClick={() => onChange(key)}
+            type="button"
+          >
+            {text}{detail && <small>{detail}</small>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function InfoButton({ children, label = 'More information' }) {
+  const tooltipId = React.useId();
+  return (
+    <span className="info-wrap">
+      <button className="info-button" type="button" aria-label={label} aria-describedby={tooltipId}>i</button>
+      <span className="info-tooltip" id={tooltipId} role="tooltip">{children}</span>
+    </span>
   );
 }
 
@@ -45,20 +84,20 @@ export function Toast({ message }) {
 
 export function SectionNav({ value }) {
   const pages = [
-    ['drill', 'Drill', 'index.html'],
-    ['pacer', 'Phrase pacer', 'pacer.html'],
-    ['alike', 'Look-alikes', 'alike.html'],
-    ['progress', 'Progress', 'progress.html'],
-    ['kanji', 'Kanji', 'kanji.html'],
+    ['drill', 'Drill'],
+    ['pacer', 'Phrase pacer'],
+    ['alike', 'Look-alikes'],
+    ['progress', 'Progress'],
+    ['kanji', 'Kanji'],
   ];
   return (
     <nav className="section-nav" aria-label="Sections">
-      {pages.map(([key, label, href]) => (
+      {pages.map(([key, label]) => (
         <a
           className="nav-link"
           aria-current={value === key ? 'page' : undefined}
           data-page={key}
-          href={`./${href}`}
+          href={`#/${key}`}
           key={key}
         >
           {label}{key === 'kanji' && <small> later</small>}

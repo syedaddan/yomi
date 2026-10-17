@@ -2,14 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { moras, particleRomaji, romaji } from '../core.js';
 import { PHRASES } from '../data.js';
 import { audioUrl, femaleSource, stopAudio } from '../audio.js';
-import { VoiceButtons } from './shared.jsx';
-
-function phraseText(item) {
-  return item.chunks.map((chunk) => chunk.w + chunk.p);
-}
 
 export default function Pacer({ prefs, setPreference, notify, active }) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const [running, setRunning] = useState(false);
   const [highlight, setHighlight] = useState(-1);
   const [note, setNote] = useState('');
@@ -17,10 +11,10 @@ export default function Pacer({ prefs, setPreference, notify, active }) {
   const timer = useRef(0);
   const player = useRef(null);
   const phraseList = PHRASES.filter((item) => !prefs.paceTheme || item.theme === prefs.paceTheme);
-  const index = Math.min(selectedIndex, Math.max(0, phraseList.length - 1));
+  const requestedIndex = phraseList.findIndex((phrase) => phrase.id === prefs.pacePhraseId);
+  const index = requestedIndex < 0 ? 0 : requestedIndex;
   const item = phraseList[index];
   const units = item ? item.chunks.flatMap((chunk) => moras(chunk.w + chunk.p)) : [];
-  const themes = ['', ...new Set(PHRASES.map((phrase) => phrase.theme))];
 
   function stop() {
     window.clearInterval(timer.current);
@@ -34,8 +28,9 @@ export default function Pacer({ prefs, setPreference, notify, active }) {
   }
 
   function goTo(nextIndex) {
+    if (!phraseList.length) return;
     stop();
-    setSelectedIndex((nextIndex + phraseList.length) % phraseList.length);
+    setPreference('pacePhraseId', phraseList[(nextIndex + phraseList.length) % phraseList.length].id);
   }
 
   function animateAtRate(rate) {
@@ -134,6 +129,10 @@ export default function Pacer({ prefs, setPreference, notify, active }) {
   }, []);
 
   useEffect(() => {
+    if (running) stop();
+  }, [prefs.paceRate, prefs.paceSpeak, prefs.voice, prefs.paceTheme, prefs.pacePhraseId, prefs.paceChunk]);
+
+  useEffect(() => {
     if (active) return undefined;
     stop();
     return undefined;
@@ -164,65 +163,7 @@ export default function Pacer({ prefs, setPreference, notify, active }) {
 
   return (
     <section className="panel" id="page-pacer">
-      <div className="grid">
-        <aside className="rail">
-          <div className="card group">
-            <h3>Phrase</h3>
-            <div className="chips">
-              {themes.map((theme) => (
-                <button
-                  className={`chip${prefs.paceTheme === theme ? ' on' : ''}`}
-                  aria-pressed={prefs.paceTheme === theme}
-                  key={theme || 'all'}
-                  onClick={() => { stop(); setPreference('paceTheme', theme); setSelectedIndex(0); }}
-                >
-                  {theme || 'All'}
-                </button>
-              ))}
-            </div>
-            <div className="list">
-              {phraseList.map((phrase, phraseIndex) => (
-                <button
-                  aria-current={phraseIndex === index}
-                  key={phrase.id}
-                  onClick={() => goTo(phraseIndex)}
-                >
-                  <span className="jp">{phraseText(phrase).join(' ')}</span>
-                  <small>{phrase.en}</small>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="card group">
-            <h3>Pace</h3>
-            <label htmlFor="pace-rate" className="hint">Speed: <b className="mono">{prefs.paceRate}</b> mora per second</label>
-            <input id="pace-rate" type="range" min="2" max="10" step="0.5" value={prefs.paceRate} onChange={(event) => { stop(); setPreference('paceRate', Number(event.target.value)); }} />
-            <label className="sw"><input type="checkbox" checked={prefs.paceChunk} onChange={(event) => { stop(); setPreference('paceChunk', event.target.checked); }} /><i />Space between chunks</label>
-            <div className="pace-speak-control">
-              <button
-                className={`btn pace-speak-toggle${prefs.paceSpeak ? ' primary' : ''}`}
-                id="pace-speak"
-                type="button"
-                aria-pressed={prefs.paceSpeak}
-                onClick={() => setPreference('paceSpeak', !prefs.paceSpeak)}
-              >
-                <span>Speak along</span>
-                <small>{prefs.paceSpeak ? 'On' : 'Off'}</small>
-              </button>
-              <p className="hint">Play the recorded voice with synchronized mora highlights.</p>
-            </div>
-            <div className="voice-row"><span className="hint">Voice</span><VoiceButtons attribute="data-pace-voice" value={prefs.voice} onChange={(value) => { stop(); setPreference('voice', value); }} /></div>
-            <p className="hint" id="pace-note" aria-live="polite">{note}</p>
-            <button className="btn quiet" id="pace-reset" onClick={() => {
-              stop();
-              setPreference('paceRate', 5);
-              setPreference('paceChunk', true);
-              setPreference('paceSpeak', false);
-              setPreference('paceTheme', '');
-              setSelectedIndex(0);
-            }}>Reset pacer</button>
-          </div>
-        </aside>
+      <div className="grid no-settings">
         <div className="card stage" id="pace-stage">
           <div className="stage-top"><span className="badge">Phrase</span> {item.theme} · <span className="mono">{units.length} mora</span><span className="hint">Read each highlighted mora aloud and keep up.</span></div>
           <div className="stage-main">
@@ -244,6 +185,7 @@ export default function Pacer({ prefs, setPreference, notify, active }) {
             <button className="btn primary" id="pace-go" onClick={start}>{running ? 'Stop' : 'Start'} <kbd>Space</kbd></button>
             <button className="btn" id="pace-next" onClick={() => goTo(index + 1)}>Next phrase <kbd>N</kbd></button>
           </div>
+          <p className="hint" id="pace-note" aria-live="polite">{note}</p>
           <p className="note" style={{ alignSelf: 'center', textAlign: 'center' }}>A mora is one beat: か, ん, っ and ー each count as one. Raise the speed once you can finish a phrase without losing your place.</p>
         </div>
       </div>
