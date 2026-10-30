@@ -1,9 +1,9 @@
-# Yomi Drill (読み)
+# Yomi (読み)
 
 A small React Japanese **reading trainer** for hiragana and katakana (the Kanji section is a placeholder for later).
 Built for a learner who is preparing for class reading tests and wants to stop decoding character by character.
 
-The app is a small React site built with Vite. It runs entirely in the browser: no account, server, or backend is required. The static build is hosted with GitHub Pages.
+The app is a small React site built with Vite. The study site is static and needs no account or backend. The Add words page uses a local VOICEVOX Engine on your own computer when you create a word. The illustrated Yomi mark is also used as the site favicon; audio and data credits are available from the information button beside the logo. Pages use extensionless paths, with Drill at the site root.
 
 ---
 
@@ -14,59 +14,64 @@ The owner's goals (from the Claude Project "Japanese Reading"):
 | Goal | How the tool addresses it |
 |---|---|
 | **Speed** (read words and whole phrases without stalling on characters) | Drill with timed reads, Flash mode (word hides after N ms), 60-second Sprint (mora/min), Phrase pacer (highlight moves at a set mora/s), weighted shuffle that repeats slow and missed cards |
-| **Accuracy** (pronunciation + intonation) | Every word shows pitch-accent marks (red bar above = high, blue bar below = low, ↘ = drop, ↗ = question). Audio per card: real recordings where available, otherwise VOICEVOX voices whose pitch is forced from the dictionary accent. Male/Female voice switch |
+| **Accuracy** (pronunciation + intonation) | Every word shows pitch-accent marks (red bar above = high, blue bar below = low, ↘ = drop, ↗ = question). Human recordings are preferred where available; female VOICEVOX is the synthetic voice. |
 | **Correctness** (confusable characters) | "Look-alikes" page: シ/ツ, ソ/ン, ぬ/め, ね/れ/わ, etc., with quizzes and tips. Progress page tracks per-item misses |
 | **Kanji** | Section exists, empty ("later") |
 
-The user explicitly asked for **real recorded clips over TTS**. TTS is only a fallback. See section 5 for what is real and what is not.
+Human clips are preferred for playback when available. Every custom word also gets a female VOICEVOX clip, even when a human recording is found.
 
 ## 2. Features (current state)
 
-- **Drill section**: mix decks freely (Hiragana 182, Katakana 164, Phrases 40, Kanji disabled), filter by themes (Home, Food, People, Places, Time, Nature, Body, IT & Work, Verbs, Adjectives, Tech, Food & Drink, Travel, Clothes, School & Fun, Look-alikes, Greetings, Class & Daily ...).
+- **Drill section**: mix decks freely (Hiragana 182, Katakana 164, Phrases 40, plus words added in this browser), filter by themes (Home, Food, People, Places, Time, Nature, Body, IT & Work, Verbs, Adjectives, Tech, Food & Drink, Travel, Clothes, School & Fun, Look-alikes, Greetings, Class & Daily ...).
   - Modes: Read (time measured to reveal), Flash (hidden after N ms), Sprint (60 s).
-  - Reveal shows pitch marks, romaji, meaning, audio controls (Voice Male/Female, Play, Slow, "Other recording" Kansai clip where present).
+  - Reveal shows pitch marks, romaji, meaning, audio controls (human recording / female VOICEVOX, Play, Slow, "Other recording" clip where present).
   - Rate: Missed / Slow / Got it (keys 1/2/3). Stats persist in `localStorage`.
   - **Back / Forward** (buttons and ← → keys). History stack of the last 100 cards; revisited cards show revealed and are never double-counted. Forward on a fresh card = Skip (no rating recorded).
   - Keys: Space/Enter reveal, P play, 1/2/3 rate, ←/→ back/forward, X (sprint miss).
-- **Phrase pacer section**: pick a phrase, set speed (mora/s), highlight walks the moras. "Speak along" plays a VOICEVOX clip and the highlight is driven by `audio.currentTime` against exact per-mora onset times (so voice and highlight cannot drift). Voice Male/Female. Previous / Next (B / N, ← →).
+- **Phrase pacer section**: pick a phrase, set speed (mora/s), highlight walks the moras. "Speak along" plays a female VOICEVOX clip and the highlight is driven by `audio.currentTime` against exact per-mora onset times (so voice and highlight cannot drift). Previous / Next (B / N, ← →).
+- **Add words section**: add Hiragana or Katakana words to a browser-local deck with meaning, theme, optional dictionary pitch, source link, and optional human audio. Search for human audio first; generating a female VOICEVOX clip is always required. Difficult starter words include コロナウイルス, きょうりゅう, and きゅうきゅうしゃ.
 - **Look-alikes section**: 20-item quizzes over confusable sets.
 - **Progress section**: per-session and saved stats (see the section).
-- Light/dark theme (follows OS), phone-friendly layout, keyboard friendly.
+- Light/dark theme (follows OS), phone-friendly layout, keyboard friendly. Romaji and pitch-mark information buttons remain fully visible beside their controls in the bottom dock; the Yomi mark uses the app's blue accent.
 
 ## 3. Repository layout
 
 ```
-yomi-drill/
+yomi/
   README.md
   index.html             Vite entry for the React app
+  public/yomi-mark.svg   illustrated Yomi logo and favicon
   package.json           familiar npm commands and dependencies
   package-lock.json      exact installed package versions
   vite.config.js         static build settings, including GitHub Pages base path
   .github/workflows/     GitHub Pages build-and-publish workflow
   src/
-    App.jsx              app shell, client-side routing, and shared preferences
+    App.jsx              app shell, extensionless client-side routing, and shared preferences
     components/
       Drill.jsx          card modes, rating, history, and sprint
       Pacer.jsx          phrase selection and synchronized playback
+      AddWords.jsx       browser-local word form and starter vocabulary
       StudyTabs.jsx      look-alikes, progress, and kanji placeholder
       SettingsBar.jsx    fixed bottom settings dock and expandable controls
       shared.jsx         pitch display, navigation, and shared controls
     core.js              pure mora, pitch, and romaji helpers
     data.js              deck data mapping and look-alike sets
     storage.js           local preferences and progress
-    audio.js             audio playback and female voice bundle
+    customWords.js       custom word validation and normalization
+    customAudio.js       IndexedDB storage for custom audio
+    voicevox.js          female VOICEVOX Engine synthesis for custom words
+    audio.js             human/female audio playback and female voice bundle
     styles.css           app styles
   build/
     candidates.py, analyze.py, hira_rows.json   hiragana word selection + Tofugu clip matching
     build2.py         builds data.json skeleton (katakana deck, phrases, Kanjium accents)
-    qa.py             F0 sanity check of male clips + keeps male phrase clips
+    qa.py             F0 sanity check of human recordings + selects phrase recordings
     add_alt.py        adds Kansai alternate clips (f###, pf##)
   tts/
     vv_lib.py         VOICEVOX helpers (build accent phrases, render, mora timings, F0 tracker)
     gen_common.py     shared bits of the generators
-    gen.py            male VOICEVOX clips tm_*.mp3 + tts/tl/tend fields in data.json
     gen_female.py     female VOICEVOX bundle out/audio/female_voice.mp3 + ttsF/tlF/tendF
-    vv_eval2.py, vv_eval3.py, final_qa.py   voice evaluation / pitch QA scripts
+    vv_eval2.py, vv_eval3.py, final_qa.py   female voice evaluation / pitch QA scripts
   tests/
     smoke.py, pace_test.py, clip_test.py, nav_test.py    Playwright (Chromium) tests
   out/
@@ -78,43 +83,43 @@ yomi-drill/
 
 ## 4. Architecture and data
 
-- **React** renders the app and keeps interface state in components. Sections use client-side hash routes (`/#/drill`, `/#/pacer`, `/#/alike`, `/#/progress`, `/#/kanji`), so navigation switches the active React view without reloading the document or exposing `.html` routes. Browser back/forward works normally.
+- **React** renders the app and keeps interface state in components. Sections use client-side extensionless paths (`/`, `/pacer`, `/alike`, `/add`, `/progress`, `/kanji`), so navigation switches the active React view without reloading the document or exposing `.html` routes. Browser back/forward works normally, and the GitHub Pages fallback supports direct visits and refreshes on section paths.
 - **Vite** is the local development server and production builder; it bundles the React code into regular static HTML, CSS, and JavaScript. GitHub Pages serves the single app entry; Vite does not run on the hosted site.
-- The compact top bar holds section navigation, display toggles, and Drill mode buttons. A fixed bottom settings dock is available throughout the app. Large option lists open into small panels; selected Drill themes stay visible as removable chips with a selected/available count. Reset icons restore individual setting groups, and **Reset all** restores all preferences without deleting study progress.
-- Deck, mode, script, and voice choices use compact pressed-state buttons rather than radio controls. Voice and audio details are available from keyboard-accessible `i` information buttons.
+- The compact top bar holds the centered Yomi brand and section navigation. A fixed two-row bottom settings dock is available throughout the app: display toggles and Drill reading mode are on the first row, and deck/theme/study controls are on the second. Large option lists open into small panels; selected Drill themes stay visible as removable chips with a selected/available count. Each row has its own reset action; resets restore preferences without deleting study progress.
+- Custom words are stored per browser: metadata in `localStorage`, generated and optional human audio in IndexedDB. They are added to the selected deck and are not automatically published to the shared GitHub Pages dataset.
+- To create a custom word, search for a human recording first, provide its source if found, then generate a female VOICEVOX clip. The page requires the VOICEVOX Engine at `127.0.0.1:50021` with browser CORS enabled. If no human recording is found, the female clip is still generated and used.
+- Deck, mode, script, and audio choices use compact pressed-state buttons rather than radio controls. Voice and audio details are available from keyboard-accessible `i` information buttons.
 - `out/data.json` is imported into the app at build time. Before starting Vite or building, an npm pre-script copies `out/audio/` to the ignored `public/audio/`; Vite then serves and bundles those static audio files.
-- `data.json` schema:
+- `data.json` schema (male VOICEVOX clips and fields are removed):
   ```
-  hira: [{kana, en, theme, accent, audio, alt, tts, ttsF}]
-  kata: [{kana, en, theme, accent, tts, ttsF}]
-  phr:  [{theme, chunks:[{w, p, a, src}], en, audio, alt, q, tts, tl, tend, tdur, ttsF, tlF, tendF}]
+  hira: [{kana, en, theme, accent, audio, alt, ttsF}]
+  kata: [{kana, en, theme, accent, ttsF}]
+  phr:  [{theme, chunks:[{w, p, a, src}], en, audio, alt, q, ttsF, tlF, tendF}]
   ```
-  - `accent`: Kanjium string such as `0`, `2`, `(名)2,(感)4,0`. `accentList()` takes the numbers; the first is shown.
-  - `audio`: real Tokyo-male recording. `alt`: Kansai recording (extra button only). `tts`: male VOICEVOX clip path.
+  - `accent`: Kanjium string such as `0`, `2`, `(名)2,(感)4,0`; custom words may have unknown pitch. `accentList()` takes the numbers; the first is shown.
+  - `audio`: human recording when available. `alt`: alternate human recording (extra button only).
   - `ttsF = {o, l}`: byte offset and length of this item's clip inside `audio/female_voice.mp3`.
-  - `tl[]`: per-mora onset seconds, `tend`: end of last mora, for the pacer. `tlF/tendF` = same for the female voice.
+  - `tlF/tendF`: per-mora onset seconds and end of last mora for the female VOICEVOX pacer clip.
   - Phrase `chunks`: `w` word, `p` particles/ending glued after it, `a` accent (0 = flat, null = none), `src` `dict` or `rule`.
 - **Mora**: one beat. Small ゃゅょ and ぁぃぅぇぉ join the previous kana; っ, ん, ー each count as one.
 - **Pitch model** (`pitchPattern(n, a)`): a=0 → L H H…; a=1 → H L L…; a=n → L H…H (odaka); otherwise L H…H L…. Particles are high after a flat word, low otherwise.
-- **Audio priority** in the drill: (voice=Female and `ttsF`) → female bundle; otherwise real recording `audio` → `tts` → browser Web Speech (last resort).
-- **Female bundle**: ONE 2.3 MB mp3 fetched lazily on first use, sliced into per-item Blobs. If the fetch fails the page falls back to the male voice and says so.
-- **Pacer clip sync**: each recording's per-mora onset timeline drives the highlight from `audio.currentTime`; playback rate is clamped to 0.5-2.
+- **Audio priority** in the drill: Female VOICEVOX uses the female bundle; Recording uses a human clip when available and otherwise the female bundle. A device voice is only a last resort if a clip cannot be loaded.
+- **Female bundle**: one MP3 fetched lazily on first use and sliced into per-item Blobs. No male VOICEVOX clips are shipped or used.
+- **Pacer clip sync**: the female VOICEVOX clip's per-mora onset timeline drives the highlight from `audio.currentTime`; playback rate is clamped to 0.5-2.
 - Preferences and stats live in `localStorage` (per browser). Wrapped in try/catch.
 
 ## 5. What was done, with measurements (be honest about quality)
 
 1. **Resources searched**: Tofugu/WaniKani vocabulary audio (CC BY-SA 4.0), Kanjium pitch accent dictionary, VOICEVOX, Kokoro, Forvo/NHK (not usable offline/licensing).
-2. **Hiragana deck**: 182 common words matched to Tofugu clips. 126 are Tokyo-accent male (median F0 < 170 Hz) and used as the primary clip; 56 only had a female Kansai recording, so those are kept as the "Other recording" button and the main audio is VOICEVOX.
-3. **Katakana deck** (164 words) and **phrase deck** (40 phrases): Kanjium accents; ます/ました/ません endings use the standard rule (`src: 'rule'`); the user's own name has no pitch (`NO_PITCH`). Only 4 phrases have a real clip (Kansai female, so not used as primary). **All other phrases and all katakana words are synthetic (VOICEVOX).**
+2. **Hiragana deck**: 182 common words matched to Tofugu clips. Human recordings are used where available; alternate clips are kept when present.
+3. **Katakana deck** (164 words) and **phrase deck** (40 phrases): Kanjium accents; ます/ました/ません endings use the standard rule (`src: 'rule'`); the user's own name has no pitch (`NO_PITCH`). Four phrases have a human clip; the remaining phrases and Katakana items use female VOICEVOX.
 4. **Pitch QA by F0 tracking** (autocorrelation per mora segment), agreement with the dictionary accent:
-   - Tofugu male recordings ≈ 73% (the dictionary itself is not always the speaker's accent).
    - Kokoro voices 36-64% → rejected (not controllable).
-   - **VOICEVOX 白上虎太郎 (male, style 12): 81%** (142/175 on the deck). Used for male.
    - **VOICEVOX 九州そら (female, style 16): 81%** (94/116 sampled). Used for female. Other female candidates on the same test: もち子さん 79%, 冥鳴ひまり 70%, 四国めたん 69%, 春日部つむぎ 62%.
    So about 1 word in 5 will sound off against the marks. **The marks are the reference, the voice is a guide.** The voice information button in the UI explains this.
 5. **Speak-along bug fixed**: the old version used browser TTS and a timer, so the voice drifted from the highlight. Now clip-based and `currentTime`-driven.
 6. **VOICEVOX trick that matters**: do NOT pass a kana string with an accent mark (it splits phrases). Build `accent_phrases` yourself (`accent = n` for flat words, else `a`), call `POST /mora_data`, set `is_interrogative` on the last phrase for questions, then `/synthesis`. See `tts/vv_lib.py: build_query`. Intonation scale 1.3.
-7. **Back/Forward + voice selector + female voice + README** (latest round).
+7. **Fast routes, shared settings dock, and local custom vocabulary**.
 
 Core reading logic is covered by `npm test`. The Playwright scripts exercise the running Vite app.
 
@@ -146,8 +151,8 @@ Optional browser tests use Playwright. Start `npm run dev` in one terminal, inst
 
 Requirements: Python 3.10+, `numpy`, `soundfile`, `ffmpeg` on PATH, `py7zr` (to unpack the engine), plus:
 - Tofugu repo: `GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/tofugu/japanese-vocabulary-pronunciation-audio` (mp3s are in `lib/mp3/`, named `漢字【かな】.mp3`).
-- Kanjium `accents.txt` from https://github.com/mifunetoshiro/kanjium (`data/source_files/accents.txt`).
-- VOICEVOX engine 0.24.1 (CPU is fine), GitHub release asset `voicevox_engine-linux-cpu-*` / the Windows or macOS build. Run it so `http://127.0.0.1:50021/version` answers. Speakers used: style 12 (白上虎太郎 ふつう), style 16 (九州そら ノーマル).
+- Kanjium `accents.txt` from https://github.com/mifunetoshiro/kanjium (`data/source_files/raw/accents.txt`).
+- VOICEVOX engine 0.24.1 (CPU is fine), GitHub release asset `voicevox_engine-linux-cpu-*` / the Windows or macOS build. Run it so `http://127.0.0.1:50021/version` answers. The female synthetic voice is 九州そら (style 16).
 
 Order:
 ```
@@ -155,10 +160,11 @@ python3 build/candidates.py ...  &&  python3 build/analyze.py ...   # pick hirag
 python3 build/build2.py <tofugu-repo> <kanjium accents.txt> build/hira_rows.json out
 python3 build/qa.py <tofugu-repo> out build/hira_rows.json
 python3 build/add_alt.py <tofugu-repo> out
-python3 tts/gen.py            # male clips + tts/tl/tend
 python3 tts/gen_female.py     # female bundle + ttsF/tlF/tendF
 ```
 Check each script's header for exact arguments; they use `ROOT`-relative paths, so run them from anywhere.
+
+To add words from the site, run the local VOICEVOX Engine with browser CORS enabled (for example, `run.exe --cors_policy_mode all` on Windows), then open the **Add words** section. The engine is only contacted for local synthesis; the saved vocabulary and audio stay in the current browser.
 
 ## 8. Known limitations
 
@@ -168,26 +174,17 @@ Check each script's header for exact arguments; they use `ROOT`-relative paths, 
 - No microphone / pronunciation scoring yet (the "accuracy" goal is only listening + marks so far).
 - No kanji. No furigana. Stats are per browser (`localStorage`), no sync or export.
 - Progress and preferences stay in this browser's `localStorage`; they do not sync to other devices.
-- The GitHub Pages site needs an internet connection for its Google Fonts and for the first lazy load of the bundled female voice.
+- The GitHub Pages study site needs an internet connection for Google Fonts and the first lazy load of the bundled female voice. Adding words also requires a locally running VOICEVOX Engine.
 
-## 9. TODO (suggested order)
+## 9. Roadmap
 
-1. **Record-and-compare**: mic capture, show learner pitch contour (F0) over the reference contour, show a mora-level score. This is the biggest missing piece for the pronunciation and intonation goal.
-2. **Kanji deck** (JLPT N5 first): reading drill with furigana toggle, on/kun readings, compound words with pitch. Fill the existing Kanji page. Data: KANJIDIC2 / Kanjium.
-3. **More real audio**: find permissively licensed Tokyo-accent clips for katakana words and phrases, and use them ahead of TTS.
-4. **Real spaced repetition** (Leitner or FSRS) instead of the weighted random picker.
-5. **Sentence deck**: short graded sentences with chunk highlighting, longer than the 40 phrases.
-6. **Export / import progress** (JSON), optional cloud sync, and per-day streaks.
-7. **Adjustable user deck**: paste a word list from class, look up pitch accents, and generate VOICEVOX audio.
-8. **Verify and correct accents** with the teacher's material; add a per-item "report wrong pitch" note stored locally.
-9. **Offline/PWA** packaging.
-10. **Accessibility pass** (including screen-reader labels on pitch bars) and Japanese font fallbacks for all platforms.
+The prioritized project roadmap, including deck expansion and user-added vocabulary, is maintained in [TODO.md](./TODO.md).
 
 ## 10. Licences and credits (keep these in the page footer)
 
 - Word recordings: WaniKani / Tofugu, CC BY-SA 4.0 (derived mp3s in this repo remain CC BY-SA).
 - Pitch accents: Kanjium.
-- Voices: VOICEVOX:白上虎太郎 and VOICEVOX:九州そら. VOICEVOX's terms require crediting the character, e.g. "VOICEVOX:九州そら". Check each character's terms before commercial use.
+- Voice: VOICEVOX:九州そら. VOICEVOX's terms require crediting the character. Check the character's terms before commercial use.
 - Page code: yours to license.
 
 ## 11. Notes for contributors

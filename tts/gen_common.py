@@ -8,7 +8,9 @@ OUT=S+'out/'
 MALE = 12                   # 白上虎太郎 (ふつう)
 INTON = {MALE: 1.3}
 os.makedirs(S+'tts/wav',exist_ok=True)
-def first_int(s): return int(re.search(r'\d+',s).group())
+def first_int(s):
+    match = re.search(r'\d+', s or '')
+    return int(match.group()) if match else None
 PRON_W={'こんにちは':'こんにちわ','こんばんは':'こんばんわ'}
 PRON_P={'は':'わ','を':'お','へ':'え'}
 def pron(w,p):

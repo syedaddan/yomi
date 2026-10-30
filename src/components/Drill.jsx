@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { median, particleRomaji, romaji } from '../core.js';
-import { DECK_NAMES, ITEMS } from '../data.js';
+import { DECK_NAMES, ITEMS, itemFromCustomRecord } from '../data.js';
 import { playItem, stopAudio } from '../audio.js';
 import { InfoButton, PitchLine, VoiceButtons } from './shared.jsx';
 
@@ -38,10 +38,14 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
   const recent = useRef([]);
   const initialized = useRef(false);
   const shownAt = useRef(performance.now());
+  const allItems = useMemo(
+    () => [...ITEMS, ...(store.customItems || []).map(itemFromCustomRecord)],
+    [store.customItems],
+  );
   const pool = useMemo(
-    () => ITEMS.filter((item) => prefs.decks[item.deck] &&
+    () => allItems.filter((item) => prefs.decks[item.deck] &&
       (!prefs.themes.length || prefs.themes.includes(`${item.deck}|${item.theme}`))),
-    [prefs.decks, prefs.themes],
+    [allItems, prefs.decks, prefs.themes],
   );
   const entry = history[position];
   const item = entry?.item || null;
@@ -271,7 +275,7 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
               </div>
             )
           ) : !item ? (
-            <div className="empty">Choose at least one deck on the left to start.</div>
+            <div className="empty">Choose at least one deck in the settings bar.</div>
           ) : (
             <>
               <div className="stage-top">
@@ -292,13 +296,10 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
                         {item.alt && <button className="btn" onClick={() => playItem(item, { voice: prefs.voice, alternate: true, slow, onError: notify })}>▶ Other recording</button>}
                       </div>
                       <InfoButton label="About these recordings">
-                        {prefs.voice === 'female' && item.ttsF
-                          ? 'Synthetic female voice (VOICEVOX:九州そら). Its pitch follows the dictionary accent; trust the marks if they disagree.'
-                          : item.audio
-                            ? 'Tokyo-accent male recording.'
-                            : item.tts
-                              ? 'Synthetic male voice (VOICEVOX:白上虎太郎). Its pitch follows the dictionary accent.'
-                              : 'Synthetic browser voice. It may not follow the pitch marks.'}
+                        {prefs.voice === 'recording' && (item.audio || item.humanAudioId || item.humanAudioUrl)
+                          ? 'This word has a human recording. Its pitch may differ from the dictionary marks.'
+                          : 'Female synthetic voice (VOICEVOX:九州そら). Its pitch follows the dictionary accent; trust the marks if they disagree.'}
+                        {item.sourceUrl && <> <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">Human recording source.</a></>}
                         {item.alt && ' The other recording is a Kansai-accent speaker, so pitch can differ from the marks.'}
                       </InfoButton>
                     </div>

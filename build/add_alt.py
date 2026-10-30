@@ -1,6 +1,6 @@
 """Add the alternate (Kansai-accent) WaniKani/Tofugu recordings as `alt` clips, and drop helper keys.
 
-Run AFTER build2.py + qa.py and BEFORE tts/gen.py.
+Run AFTER build2.py + qa.py and BEFORE tts/gen_female.py.
 Usage: python3 build/add_alt.py <tofugu-repo-dir> <out-dir>      (uses build/hira_rows.json)
 - hiragana items with no Tokyo-male clip get audio/f###.mp3 as `alt` (the only recording we have, Kansai accent)
 - the 4 phrases that have a Tofugu clip get audio/pf##.mp3 as `alt`

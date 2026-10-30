@@ -15,7 +15,6 @@ export const ITEMS = [
     en: row.en,
     audio: row.audio,
     alt: row.alt,
-    tts: row.tts,
     ttsF: row.ttsF,
     tl: row.tl,
     tend: row.tend,
@@ -29,7 +28,6 @@ export const ITEMS = [
     en: row.en,
     audio: null,
     alt: null,
-    tts: row.tts,
     ttsF: row.ttsF,
     chunks: [{ w: row.kana, p: '', a: accentList(row.accent)[0], src: 'dict' }],
     accents: accentList(row.accent),
@@ -41,7 +39,6 @@ export const ITEMS = [
     en: row.en,
     audio: row.audio,
     alt: row.alt,
-    tts: row.tts,
     ttsF: row.ttsF,
     tl: row.tl,
     tend: row.tend,
@@ -57,6 +54,19 @@ export const ITEMS = [
 });
 
 export const PHRASES = ITEMS.filter((item) => item.deck === 'phr');
+
+export function itemFromCustomRecord(record) {
+  const accents = record.accent == null ? [] : [record.accent];
+  return {
+    ...record,
+    id: record.id,
+    text: record.kana,
+    moraCount: moras(record.kana).length,
+    accents,
+    chunks: [{ w: record.kana, p: '', a: record.accent, src: 'custom' }],
+    custom: true,
+  };
+}
 
 export const LOOKALIKE_SETS = [
   { script: 'kata', glyphs: ['シ', 'ツ'], tip: 'シ: the two short strokes sit side by side and the long stroke sweeps up like し. ツ: the short strokes stand more upright and the long stroke slashes down-left like つ.' },

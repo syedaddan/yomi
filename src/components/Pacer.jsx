@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { moras, particleRomaji, romaji } from '../core.js';
 import { PHRASES } from '../data.js';
-import { audioUrl, femaleSource, stopAudio } from '../audio.js';
+import { femaleSource, stopAudio } from '../audio.js';
 
 export default function Pacer({ prefs, setPreference, notify, active }) {
   const [running, setRunning] = useState(false);
@@ -98,18 +98,14 @@ export default function Pacer({ prefs, setPreference, notify, active }) {
       return;
     }
 
-    if (prefs.voice === 'female' && item.ttsF && item.tlF) {
+    if (item.ttsF && item.tlF) {
       setNote('Loading the female voice…');
       try {
         const source = await femaleSource(item);
         if (!player.current && await startClip(source, item.tlF, item.tendF)) return;
       } catch {
-        notify('The female voice could not load. Using the male voice.');
+        notify('The female voice could not load. Using your device voice.');
       }
-    }
-    if (item.tts && item.tl) {
-      await startClip(audioUrl(item.tts), item.tl, item.tend);
-      return;
     }
     setNote('This phrase has no synchronized clip. Using a device voice and timed highlight.');
     const rate = Math.min(2, Math.max(0.5, prefs.paceRate / 7));

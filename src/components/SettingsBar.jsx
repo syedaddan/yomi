@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ITEMS, PHRASES } from '../data.js';
-import { ChoiceButtons, InfoButton, VoiceButtons } from './shared.jsx';
+import { ChoiceButtons, InfoButton } from './shared.jsx';
 
 const DECKS = [
   ['hira', 'Hiragana'],
@@ -65,10 +65,11 @@ function ToggleSetting({ label, pressed, onClick, info, id }) {
   );
 }
 
-export default function SettingsBar({ page, prefs, setPreference, resetSection, resetAll, onDrillReset, notify }) {
+export default function SettingsBar({ page, prefs, setPreference, resetSection, resetAll, onDrillReset, notify, customItems = [] }) {
   const [openSection, setOpenSection] = useState('');
   const bar = useRef(null);
-  const deckThemes = useMemo(() => [...new Set(ITEMS.map((item) => `${item.deck}|${item.theme}`))], []);
+  const allItems = useMemo(() => [...ITEMS, ...customItems], [customItems]);
+  const deckThemes = useMemo(() => [...new Set(allItems.map((item) => `${item.deck}|${item.theme}`))], [allItems]);
   const themeNames = useMemo(() => {
     const counts = {};
     for (const key of deckThemes) {
@@ -134,7 +135,7 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
 
   function reset(name) {
     resetSection(name);
-    if (name === 'decks' || name === 'themes' || name === 'reading') onDrillReset();
+    if (name === 'display' || name === 'decks' || name === 'themes' || name === 'reading') onDrillReset();
   }
 
   return (
@@ -149,8 +150,36 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
         />
       )}
       <div className="settings-dock-inner" ref={bar}>
-        <div className="settings-scroll">
-          {page === 'drill' && (
+        <div className="settings-display-row">
+          <div className="display-options" role="group" aria-label="Display options">
+            <div className="display-control">
+              <button className="choice-button" type="button" aria-pressed={prefs.romaji} onClick={() => setPreference('romaji', !prefs.romaji)}>Romaji</button>
+              <InfoButton label="Romaji information">Show or hide the Latin-letter reading alongside Japanese text.</InfoButton>
+            </div>
+            <div className="display-control">
+              <button className="choice-button" type="button" aria-pressed={prefs.marks} onClick={() => setPreference('marks', !prefs.marks)}>Pitch marks</button>
+              <InfoButton label="Pitch marks information">Show or hide the high/low pitch marks on readings.</InfoButton>
+            </div>
+            {page === 'drill' && (
+              <ChoiceButtons
+                label="Reading mode"
+                value={prefs.mode}
+                options={['read', 'flash', 'sprint'].map((mode) => [mode, mode[0].toUpperCase() + mode.slice(1)])}
+                onChange={(mode) => { setPreference('mode', mode); onDrillReset(); }}
+              />
+            )}
+          </div>
+          <button
+            className="reset-all"
+            type="button"
+            aria-label="Reset all display options"
+            title="Reset all display options"
+            onClick={() => reset('display')}
+          ><span aria-hidden="true">↺</span> Reset all</button>
+        </div>
+        <div className="settings-controls-row">
+            <div className="settings-scroll">
+              {page === 'drill' && (
             <>
               <SettingPanel
                 id="decks"
@@ -164,7 +193,7 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
                   label="Decks"
                   value={DECKS.filter(([key]) => prefs.decks[key]).map(([key]) => key)}
                   multiple
-                  options={DECKS.map(([key, name]) => [key, name, ITEMS.filter((item) => item.deck === key).length])}
+                  options={DECKS.map(([key, name]) => [key, name, allItems.filter((item) => item.deck === key).length])}
                   onChange={toggleDeck}
                 />
               </SettingPanel>
@@ -203,9 +232,9 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
                 <ToggleSetting label="Space phrase chunks" pressed={prefs.chunk} onClick={() => setPreference('chunk', !prefs.chunk)} />
               </SettingPanel>
             </>
-          )}
+              )}
 
-          {page === 'pacer' && (
+              {page === 'pacer' && (
             <>
               <SettingPanel
                 id="phrases"
@@ -239,7 +268,7 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
               <SettingPanel
                 id="pace"
                 label="Pace"
-                summary={`${prefs.paceRate} mora/s · ${prefs.voice}`}
+                summary={`${prefs.paceRate} mora/s`}
                 open={openSection === 'pace'}
                 onToggle={() => toggleSection('pace')}
                 onReset={() => resetSection('pace')}
@@ -250,12 +279,11 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
                 </label>
                 <ToggleSetting label="Speak along" id="pace-speak" pressed={prefs.paceSpeak} onClick={() => setPreference('paceSpeak', !prefs.paceSpeak)} info="Play the recorded synthetic voice while highlights follow its audio timeline. When off, highlights advance at the selected speed without audio." />
                 <ToggleSetting label="Space phrase chunks" pressed={prefs.paceChunk} onClick={() => setPreference('paceChunk', !prefs.paceChunk)} />
-                <VoiceButtons attribute="data-pace-voice" value={prefs.voice} onChange={(value) => setPreference('voice', value)} />
               </SettingPanel>
             </>
-          )}
+              )}
 
-          {page === 'alike' && (
+              {page === 'alike' && (
             <SettingPanel
               id="script"
               label="Script"
@@ -271,19 +299,20 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
                 onChange={(value) => setPreference('alikeScript', value)}
               />
             </SettingPanel>
-          )}
-        </div>
-        {page === 'drill' && selectedThemes.length > 0 && (
-          <div className="selected-theme-strip" aria-label="Selected themes">
-            {selectedThemes.map((key) => {
-              const [deck, name] = key.split('|');
-              const label = themeNames[name] > 1 ? `${name} · ${DECK_LABELS[deck]}` : name;
-              return <button className="selected-theme" type="button" key={key} onClick={() => toggleTheme(key)}>{label}<span aria-hidden="true">×</span></button>;
-            })}
+              )}
+            </div>
+            {page === 'drill' && selectedThemes.length > 0 && (
+              <div className="selected-theme-strip" aria-label="Selected themes">
+                {selectedThemes.map((key) => {
+                  const [deck, name] = key.split('|');
+                  const label = themeNames[name] > 1 ? `${name} · ${DECK_LABELS[deck]}` : name;
+                  return <button className="selected-theme" type="button" key={key} onClick={() => toggleTheme(key)}>{label}<span aria-hidden="true">×</span></button>;
+                })}
+              </div>
+            )}
+            <button className="reset-all" type="button" aria-label="Reset all settings" title="Reset all settings" onClick={resetAll}><span aria-hidden="true">↺</span> Reset all</button>
           </div>
-        )}
-        <button className="reset-all" type="button" onClick={resetAll}><span aria-hidden="true">↺</span> Reset all</button>
-      </div>
+        </div>
     </aside>
   );
 }

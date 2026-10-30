@@ -1,5 +1,8 @@
+import { loadCustomAudio } from './customAudio.js';
+
 const baseUrl = import.meta.env.BASE_URL;
 let activeAudio = null;
+let activeObjectUrl = null;
 let femaleBundlePromise = null;
 const femaleObjectUrls = new Map();
 
@@ -12,15 +15,32 @@ export function stopAudio() {
     activeAudio.pause();
     activeAudio = null;
   }
+  if (activeObjectUrl) {
+    URL.revokeObjectURL(activeObjectUrl);
+    activeObjectUrl = null;
+  }
   window.speechSynthesis?.cancel();
 }
 
-function playClip(path, rate = 1) {
+function playClip(source, rate = 1) {
   stopAudio();
-  const player = new Audio(audioUrl(path));
+  const player = new Audio(source);
   player.playbackRate = rate;
   activeAudio = player;
   return player.play();
+}
+
+function playBlob(blob, rate = 1) {
+  stopAudio();
+  activeObjectUrl = URL.createObjectURL(blob);
+  const player = new Audio(activeObjectUrl);
+  player.playbackRate = rate;
+  activeAudio = player;
+  player.addEventListener('ended', stopAudio, { once: true });
+  return player.play().catch((error) => {
+    stopAudio();
+    throw error;
+  });
 }
 
 export function femaleSource(item) {
@@ -66,29 +86,52 @@ export async function playItem(item, { voice, alternate = false, slow = false, o
   const rate = slow ? 0.7 : 1;
   if (alternate && item.alt) {
     try {
-      await playClip(item.alt, rate);
+      await playClip(audioUrl(item.alt), rate);
     } catch {
       onError('This recording could not play here.');
     }
     return;
   }
-  if (voice === 'female' && item.ttsF) {
+
+  if (voice === 'recording') {
     try {
-      const source = await femaleSource(item);
-      const player = new Audio(source);
-      player.playbackRate = rate;
-      stopAudio();
-      activeAudio = player;
-      await player.play();
-      return;
-    } catch {
-      onError('The female voice could not load. Playing the male voice instead.');
+      if (item.humanAudioId) {
+        const recording = await loadCustomAudio(item.humanAudioId);
+        if (!recording) throw new Error('The saved human recording is missing from this browser.');
+        await playBlob(recording, rate);
+        return;
+      }
+      if (item.humanAudioUrl) {
+        await playClip(item.humanAudioUrl, rate);
+        return;
+      }
+      if (item.audio) {
+        await playClip(audioUrl(item.audio), rate);
+        return;
+      }
+    } catch (error) {
+      onError(error instanceof Error ? error.message : 'The human recording could not play.');
     }
   }
-  const source = item.audio || item.tts;
-  if (source) {
+
+  if (item.femaleAudioId || item.ttsF) {
     try {
-      await playClip(source, rate);
+      if (item.femaleAudioId) {
+        const recording = await loadCustomAudio(item.femaleAudioId);
+        if (!recording) throw new Error('The generated female recording is missing from this browser.');
+        await playBlob(recording, rate);
+      } else {
+        await playClip(await femaleSource(item), rate);
+      }
+      return;
+    } catch (error) {
+      onError(error instanceof Error ? error.message : 'The female VOICEVOX recording could not play.');
+    }
+  }
+
+  if (item.audio) {
+    try {
+      await playClip(audioUrl(item.audio), rate);
     } catch {
       onError('This recording could not play here.');
     }

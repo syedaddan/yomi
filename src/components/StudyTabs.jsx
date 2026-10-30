@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { median, romaji } from '../core.js';
-import { DECK_NAMES, ITEMS, LOOKALIKE_SETS } from '../data.js';
+import { DECK_NAMES, ITEMS, LOOKALIKE_SETS, itemFromCustomRecord } from '../data.js';
 
 function shuffle(values) {
   const result = [...values];
@@ -163,7 +163,8 @@ function LookalikeTab({ store, setStore, active }) {
 function ProgressTab({ store, setStore, notify }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const ids = Object.keys(store.stats);
-  const itemById = Object.fromEntries(ITEMS.map((item) => [item.id, item]));
+  const allItems = [...ITEMS, ...(store.customItems || []).map(itemFromCustomRecord)];
+  const itemById = Object.fromEntries(allItems.map((item) => [item.id, item]));
   const total = ids.reduce((sum, id) => sum + store.stats[id].n, 0);
   const got = ids.reduce((sum, id) => sum + store.stats[id].got, 0);
   const times = ids.flatMap((id) => store.stats[id].ms || []);
@@ -199,7 +200,7 @@ function ProgressTab({ store, setStore, notify }) {
           <h2>Decks</h2>
           <div className="scroll-x"><table><thead><tr><th>Deck</th><th className="num">Seen</th><th className="num">Got it</th></tr></thead><tbody>
             {['hira', 'kata', 'phr'].map((deck) => {
-              const items = ITEMS.filter((item) => item.deck === deck);
+              const items = allItems.filter((item) => item.deck === deck);
               const seen = items.filter((item) => store.stats[item.id]);
               const ratings = seen.reduce((sum, item) => sum + store.stats[item.id].n, 0);
               const successes = seen.reduce((sum, item) => sum + store.stats[item.id].got, 0);

@@ -1,16 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import Drill from './components/Drill.jsx';
 import Pacer from './components/Pacer.jsx';
+import AddWords from './components/AddWords.jsx';
 import { KanjiTab, LookalikeTab, ProgressTab } from './components/StudyTabs.jsx';
-import { ChoiceButtons, InfoButton, SectionNav, Toast } from './components/shared.jsx';
+import { InfoButton, SectionNav, Toast } from './components/shared.jsx';
 import SettingsBar from './components/SettingsBar.jsx';
 import { DEFAULT_PREFS, loadStore, preferencesFrom, saveStore } from './storage.js';
 
-const pages = ['drill', 'pacer', 'alike', 'progress', 'kanji'];
+const pages = ['drill', 'pacer', 'alike', 'progress', 'kanji', 'add'];
 
-function pageFromHash() {
-  const requested = window.location.hash.replace(/^#\/?/, '');
-  return pages.includes(requested) ? requested : 'drill';
+const basePath = import.meta.env.BASE_URL.replace(/\/+$/, '');
+
+function pagePath(page) {
+  const root = basePath ? `${basePath}/` : '/';
+  return page === 'drill' ? root : `${root}${page}`;
+}
+
+function pageFromLocation() {
+  const legacyHash = window.location.hash.replace(/^#\/?/, '');
+  if (pages.includes(legacyHash)) return legacyHash;
+
+  let route = window.location.pathname;
+  if (basePath && (route === basePath || route.startsWith(`${basePath}/`))) {
+    route = route.slice(basePath.length);
+  }
+  route = route.replace(/^\/+|\/+$/g, '');
+  return pages.includes(route) ? route : 'drill';
 }
 
 function initialState() {
@@ -18,33 +33,44 @@ function initialState() {
   return { store, prefs: preferencesFrom(store) };
 }
 
-function QuickToggle({ label, pressed, onClick }) {
-  return (
-    <button className="choice-button" type="button" aria-pressed={pressed} onClick={onClick}>{label}</button>
-  );
-}
-
 export default function App() {
   const [initial] = useState(initialState);
   const [store, setStore] = useState(initial.store);
   const [prefs, setPrefs] = useState(initial.prefs);
   const [toast, setToast] = useState('');
-  const [page, setPage] = useState(pageFromHash);
+  const [page, setPage] = useState(pageFromLocation);
   const [resetVersion, setResetVersion] = useState(0);
 
+  function navigate(nextPage, replace = false) {
+    const url = `${pagePath(nextPage)}${window.location.search}`;
+    if (replace) window.history.replaceState(null, '', url);
+    else window.history.pushState(null, '', url);
+    setPage(nextPage);
+    window.scrollTo(0, 0);
+  }
+
   useEffect(() => {
-    function onHashChange() {
-      setPage(pageFromHash());
+    function onLocationChange() {
+      const nextPage = pageFromLocation();
+      const nextPath = pagePath(nextPage);
+      if (window.location.hash || window.location.pathname !== nextPath) {
+        window.history.replaceState(null, '', `${nextPath}${window.location.search}`);
+      }
+      setPage(nextPage);
       window.scrollTo(0, 0);
     }
-    window.addEventListener('hashchange', onHashChange);
-    if (!window.location.hash) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#/drill`);
-    return () => window.removeEventListener('hashchange', onHashChange);
+    onLocationChange();
+    window.addEventListener('popstate', onLocationChange);
+    window.addEventListener('hashchange', onLocationChange);
+    return () => {
+      window.removeEventListener('popstate', onLocationChange);
+      window.removeEventListener('hashchange', onLocationChange);
+    };
   }, []);
 
   useEffect(() => {
-    const label = { drill: 'Drill', pacer: 'Phrase pacer', alike: 'Look-alikes', progress: 'Progress', kanji: 'Kanji' }[page];
-    document.title = `${label} · Yomi Drill`;
+    const label = { drill: 'Drill', pacer: 'Phrase pacer', alike: 'Look-alikes', progress: 'Progress', kanji: 'Kanji', add: 'Add words' }[page];
+    document.title = `${label} · Yomi`;
   }, [page]);
 
   useEffect(() => {
@@ -70,12 +96,12 @@ export default function App() {
   function resetSection(section) {
     const defaults = DEFAULT_PREFS;
     const resetValues = {
-      display: { romaji: defaults.romaji, marks: defaults.marks },
+      display: { romaji: defaults.romaji, marks: defaults.marks, mode: defaults.mode },
       decks: { decks: { ...defaults.decks } },
       themes: { themes: [] },
       reading: { mode: defaults.mode, flashMs: defaults.flashMs, chunk: defaults.chunk },
       phrases: { paceTheme: defaults.paceTheme, pacePhraseId: defaults.pacePhraseId },
-      pace: { paceRate: defaults.paceRate, paceChunk: defaults.paceChunk, paceSpeak: defaults.paceSpeak, voice: defaults.voice },
+      pace: { paceRate: defaults.paceRate, paceChunk: defaults.paceChunk, paceSpeak: defaults.paceSpeak },
       script: { alikeScript: defaults.alikeScript },
     }[section];
     if (!resetValues) return;
@@ -92,32 +118,49 @@ export default function App() {
     notify('All settings reset.');
   }
 
+  function addCustomItem(item) {
+    const nextPrefs = {
+      ...prefs,
+      decks: { ...prefs.decks, [item.deck]: true },
+      themes: prefs.themes.length
+        ? [...new Set([...prefs.themes, `${item.deck}|${item.theme}`])]
+        : prefs.themes,
+    };
+    const nextStore = {
+      ...store,
+      prefs: { ...store.prefs, ...nextPrefs },
+      customItems: [...(store.customItems || []), item],
+    };
+    if (!saveStore(nextStore)) throw new Error('Could not save this word in browser storage.');
+    setStore(nextStore);
+    setPrefs(nextPrefs);
+    setResetVersion((version) => version + 1);
+    navigate('drill');
+  }
+
+  function deleteCustomItem(id) {
+    const nextStore = { ...store, customItems: store.customItems.filter((item) => item.id !== id) };
+    if (!saveStore(nextStore)) throw new Error('Could not update your saved word list.');
+    setStore(nextStore);
+  }
+
   return (
     <>
       <div className={`wrap${prefs.romaji ? '' : ' no-rom'}${prefs.marks ? '' : ' no-mark'}`} id="app">
         <header className="top">
           <div className="top-in">
-            <div className="brand"><b lang="ja">読み</b><span>Yomi Drill</span></div>
-            <div className="top-quick-controls">
-              <div className="quick-setting">
-                <QuickToggle label="Romaji" pressed={prefs.romaji} onClick={() => setPreference('romaji', !prefs.romaji)} />
-                <InfoButton label="Romaji information">Show or hide the Latin-letter reading alongside Japanese text.</InfoButton>
-              </div>
-              <div className="quick-setting">
-                <QuickToggle label="Pitch marks" pressed={prefs.marks} onClick={() => setPreference('marks', !prefs.marks)} />
-                <InfoButton label="Pitch marks information">Show or hide the high/low pitch marks on readings.</InfoButton>
-              </div>
-              {page === 'drill' && (
-                <ChoiceButtons
-                  label="Reading mode"
-                  value={prefs.mode}
-                  options={['read', 'flash', 'sprint'].map((mode) => [mode, mode[0].toUpperCase() + mode.slice(1)])}
-                  onChange={(mode) => { setPreference('mode', mode); setResetVersion((version) => version + 1); }}
-                />
-              )}
-              <button className="reset-icon top-reset" type="button" aria-label="Reset display settings" title="Reset display settings" onClick={() => resetSection('display')}>↺</button>
+            <div className="brand">
+              <img className="brand-mark" src={`${import.meta.env.BASE_URL}yomi-mark.svg`} alt="" />
+              <span className="brand-name">Yomi</span>
+              <InfoButton label="Audio and data information">
+                <span className="credits-tooltip-content">
+                  <span><b>Word recordings:</b> <a href="https://github.com/tofugu/japanese-vocabulary-pronunciation-audio" target="_blank" rel="noopener noreferrer">WaniKani / Tofugu</a>, CC BY-SA 4.0.</span>
+                  <span><b>Synthetic voice:</b> <a href="https://voicevox.hiroshiba.jp/" target="_blank" rel="noopener noreferrer">VOICEVOX:九州そら</a>.</span>
+                  <span><b>Pitch accents:</b> <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener noreferrer">Kanjium</a>.</span>
+                </span>
+              </InfoButton>
             </div>
-            <SectionNav value={page} />
+            <SectionNav value={page} onNavigate={navigate} />
           </div>
         </header>
 
@@ -127,13 +170,11 @@ export default function App() {
           {page === 'alike' && <LookalikeTab active store={store} setStore={setStore} />}
           {page === 'progress' && <ProgressTab store={store} setStore={setStore} notify={notify} />}
           {page === 'kanji' && <KanjiTab />}
+          {page === 'add' && <AddWords customItems={store.customItems || []} onAdd={addCustomItem} onDelete={deleteCustomItem} />}
         </main>
 
-        <footer className="credits">
-          <p><b>Audio and data.</b> Word recordings: Tokyo-accent male voice from <a href="https://github.com/tofugu/japanese-vocabulary-pronunciation-audio" target="_blank" rel="noopener noreferrer">WaniKani / Tofugu</a> (CC BY-SA 4.0). Synthetic voices: <a href="https://voicevox.hiroshiba.jp/" target="_blank" rel="noopener noreferrer">VOICEVOX:白上虎太郎</a> (male) and <a href="https://voicevox.hiroshiba.jp/" target="_blank" rel="noopener noreferrer">VOICEVOX:九州そら</a> (female). Pitch accents: <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener noreferrer">Kanjium</a>.</p>
-        </footer>
       </div>
-      <SettingsBar page={page} prefs={prefs} setPreference={setPreference} resetSection={resetSection} resetAll={resetAll} notify={notify} onDrillReset={() => setResetVersion((version) => version + 1)} />
+      <SettingsBar page={page} prefs={prefs} setPreference={setPreference} resetSection={resetSection} resetAll={resetAll} notify={notify} onDrillReset={() => setResetVersion((version) => version + 1)} customItems={store.customItems || []} />
       <Toast message={toast} />
     </>
   );
