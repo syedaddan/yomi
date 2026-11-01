@@ -153,13 +153,14 @@ export function Toast({ message }) {
   return message ? <div className="toast" role="status">{message}</div> : null;
 }
 
-export function SectionNav({ value, onNavigate }) {
+export function SectionNav({ value, onNavigate, isAdmin = false }) {
   const pages = [
     ['drill', 'Drill'],
     ['kanji', 'Kanji'],
     ['pacer', 'Phrase pacer'],
     ['alike', 'Look-alikes'],
     ['add', 'Add words'],
+    ...(isAdmin ? [['decks', 'Decks']] : []),
     ['progress', 'Progress'],
   ];
   return (

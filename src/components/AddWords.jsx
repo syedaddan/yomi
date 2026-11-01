@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { moras } from '../core.js';
-import { ITEMS } from '../data.js';
+import { DECK_NAMES, ITEMS } from '../data.js';
 import { createCustomWord } from '../customWords.js';
 import { deleteCustomAudio, saveCustomAudio } from '../customAudio.js';
 import { synthesizeFemaleWord } from '../voicevox.js';
@@ -21,7 +21,7 @@ const SUGGESTED_WORDS = [
   { deck: 'hira', kana: 'りょこう', meaning: 'travel', theme: 'Travel & Places', accent: '0' },
 ];
 
-export default function AddWords({ customItems, onAdd, onDelete }) {
+export default function AddWords({ customItems, onAdd, onDelete, items = ITEMS }) {
   const [deck, setDeck] = useState('hira');
   const [kana, setKana] = useState('');
   const [meaning, setMeaning] = useState('');
@@ -38,11 +38,11 @@ export default function AddWords({ customItems, onAdd, onDelete }) {
   const [error, setError] = useState('');
   const wordMoras = useMemo(() => moras(kana.trim()), [kana]);
   const themes = useMemo(
-    () => [...new Set(['New words', ...ITEMS.concat(customItems).map((item) => item.theme)])].sort(),
-    [customItems],
+    () => [...new Set(['New words', ...items.concat(customItems).map((item) => item.theme)])].sort(),
+    [customItems, items],
   );
   const availableSuggestions = SUGGESTED_WORDS.filter(
-    (suggestion) => !ITEMS.concat(customItems).some((item) => item.deck === suggestion.deck && item.kana === suggestion.kana),
+    (suggestion) => !items.concat(customItems).some((item) => item.deck === suggestion.deck && (item.kana || item.text) === suggestion.kana),
   );
 
   function searchHumanRecording() {
@@ -92,7 +92,7 @@ export default function AddWords({ customItems, onAdd, onDelete }) {
         throw new Error('Choose an audio file smaller than 10 MB.');
       }
       const selectedTheme = theme === '__custom__' ? customTheme : theme;
-      if ([...ITEMS, ...customItems].some((item) => item.deck === deck && item.kana === kana.trim())) {
+      if ([...items, ...customItems].some((item) => item.deck === deck && (item.kana || item.text) === kana.trim())) {
         throw new Error('That word is already in this deck.');
       }
       const id = `custom:${crypto.randomUUID()}`;
@@ -149,7 +149,7 @@ export default function AddWords({ customItems, onAdd, onDelete }) {
   }
 
   async function remove(item) {
-    if (!window.confirm(`Remove ${item.kana} from this browser's custom deck?`)) return;
+    if (!window.confirm(`Remove ${item.kana} from your personal deck?`)) return;
     try {
       await deleteCustomAudio([item.femaleAudioId, item.humanAudioId]);
       onDelete(item.id);
@@ -268,17 +268,26 @@ export default function AddWords({ customItems, onAdd, onDelete }) {
         {customItems.length > 0 && (
           <details className="custom-word-list">
             <summary>Your words <span>{customItems.length}</span></summary>
-            <ul>
-              {customItems.map((item) => (
-                <li key={item.id}>
-                  <span className="jp">{item.kana}</span>
-                  <span>{item.en}</span>
-                  <small>{item.deck === 'hira' ? 'Hiragana' : 'Katakana'} · {item.theme}</small>
-                  {item.sourceUrl && <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">Human recording source</a>}
-                  <button className="btn quiet" type="button" onClick={() => remove(item)}>Remove</button>
-                </li>
-              ))}
-            </ul>
+            {['hira', 'kata'].map((deckKey) => {
+              const deckItems = customItems.filter((item) => item.deck === deckKey);
+              if (!deckItems.length) return null;
+              return (
+                <section className="custom-word-deck" key={deckKey}>
+                  <h3>{DECK_NAMES[deckKey]} <span>{deckItems.length}</span></h3>
+                  <ul>
+                    {deckItems.map((item) => (
+                      <li key={item.id}>
+                        <span className="jp">{item.kana}</span>
+                        <span>{item.en}</span>
+                        <small>{item.theme}</small>
+                        {item.sourceUrl && <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">Human recording source</a>}
+                        <button className="btn quiet" type="button" onClick={() => remove(item)}>Remove</button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              );
+            })}
           </details>
         )}
       </div>

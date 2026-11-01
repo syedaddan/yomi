@@ -161,10 +161,10 @@ function LookalikeTab({ store, setStore, active }) {
   );
 }
 
-function ProgressTab({ store, setStore, notify }) {
+function ProgressTab({ store, setStore, notify, items = ITEMS }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const ids = Object.keys(store.stats);
-  const allItems = [...ITEMS, ...(store.customItems || []).map(itemFromCustomRecord)];
+  const allItems = [...items, ...(store.customItems || []).map(itemFromCustomRecord)];
   const itemById = Object.fromEntries(allItems.map((item) => [item.id, item]));
   const total = ids.reduce((sum, id) => sum + store.stats[id].n, 0);
   const got = ids.reduce((sum, id) => sum + store.stats[id].got, 0);

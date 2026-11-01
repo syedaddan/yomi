@@ -4,11 +4,15 @@ import Pacer from './components/Pacer.jsx';
 import AddWords from './components/AddWords.jsx';
 import KanjiDeck from './components/KanjiDeck.jsx';
 import AccountPage from './components/AccountPage.jsx';
+import DeckAdmin from './components/DeckAdmin.jsx';
 import { LookalikeTab, ProgressTab } from './components/StudyTabs.jsx';
 import { InfoButton, SectionNav, Toast } from './components/shared.jsx';
 import AccountPanel from './components/AccountPanel.jsx';
 import SettingsBar from './components/SettingsBar.jsx';
 import kanjiDeck from '../out/kanji.json';
+import { ITEMS } from './data.js';
+import { applyDeckOverrides } from './deckCatalog.js';
+import { readDeckCatalog, removeDeckCatalogItem, saveDeckCatalogItem } from './deckStore.js';
 import {
   publishNextKanjiLesson as publishNextKanjiLessonRemote,
   readKanjiAvailability,
@@ -31,7 +35,7 @@ import {
   userStorageKey,
 } from './storage.js';
 
-const pages = ['drill', 'kanji', 'pacer', 'alike', 'progress', 'add', 'account'];
+const pages = ['drill', 'kanji', 'pacer', 'alike', 'progress', 'add', 'decks', 'account'];
 const pagesWithSettings = new Set(['drill', 'kanji', 'pacer', 'alike']);
 
 const basePath = import.meta.env.BASE_URL.replace(/\/+$/, '');
@@ -101,6 +105,8 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState('');
+  const [deckItems, setDeckItems] = useState(ITEMS);
+  const [deckCatalogError, setDeckCatalogError] = useState('');
   const [kanjiUnlockedCount, setKanjiUnlockedCount] = useState(1);
   const [adminNotice, setAdminNotice] = useState(false);
   const cloudUserId = useRef(null);
@@ -110,6 +116,32 @@ export default function App() {
   useEffect(() => {
     storeRef.current = store;
   }, [store]);
+
+  useEffect(() => {
+    let active = true;
+    async function refreshDeckCatalog() {
+      try {
+        const items = await readDeckCatalog();
+        if (active) {
+          setDeckItems(items);
+          setDeckCatalogError('');
+        }
+      } catch (error) {
+        if (active) setDeckCatalogError(error instanceof Error ? error.message : 'Could not load the shared decks.');
+      }
+    }
+    function refreshWhenVisible() {
+      if (document.visibilityState === 'visible') refreshDeckCatalog();
+    }
+    refreshDeckCatalog();
+    const timer = window.setInterval(refreshDeckCatalog, 30000);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, []);
 
   useEffect(() => {
     if (!supabase) return undefined;
@@ -280,7 +312,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const label = { drill: 'Drill', pacer: 'Phrase pacer', alike: 'Look-alikes', progress: 'Progress', kanji: 'Kanji', add: 'Add words', account: 'Account' }[page];
+    if (page !== 'decks' || !authReady) return;
+    const userId = authSession?.user?.id;
+    if (userId && (profileLoading || profileUserId.current !== userId)) return;
+    if (profile?.is_admin) return;
+    window.history.replaceState(null, '', `${pagePath('drill')}${window.location.search}`);
+    setPage('drill');
+  }, [page, authReady, authSession?.user?.id, profileLoading, profile?.is_admin]);
+
+  useEffect(() => {
+    const label = { drill: 'Drill', pacer: 'Phrase pacer', alike: 'Look-alikes', progress: 'Progress', kanji: 'Kanji', add: 'Add words', decks: 'Decks', account: 'Account' }[page];
     document.title = `${label} · Yomi`;
   }, [page]);
 
@@ -522,6 +563,21 @@ export default function App() {
     setStore(nextStore);
   }
 
+  async function saveDeckItem(item) {
+    if (!profile?.is_admin) throw new Error('Only the Yomi admin can change shared decks.');
+    const override = await saveDeckCatalogItem(item);
+    setDeckItems((current) => applyDeckOverrides(current, [override]));
+    setResetVersion((version) => version + 1);
+  }
+
+  async function deleteDeckItem(id) {
+    if (!profile?.is_admin) throw new Error('Only the Yomi admin can change shared decks.');
+    const isOriginal = ITEMS.some((item) => item.id === id);
+    const override = await removeDeckCatalogItem(id, isOriginal);
+    setDeckItems((current) => applyDeckOverrides(current, [override]));
+    setResetVersion((version) => version + 1);
+  }
+
   async function publishNextKanjiLesson() {
     if (!profile?.is_admin) {
       setAdminNotice(true);
@@ -590,15 +646,15 @@ export default function App() {
                 </span>
               </InfoButton>
             </div>
-            <SectionNav value={page} onNavigate={navigate} />
+            <SectionNav value={page} onNavigate={navigate} isAdmin={Boolean(profile?.is_admin)} />
           </div>
         </header>
 
         <main>
-          {page === 'drill' && <Drill key={resetVersion} active prefs={prefs} setPreference={setPreference} store={store} setStore={setStore} notify={notify} />}
-          {page === 'pacer' && <Pacer active prefs={prefs} setPreference={setPreference} notify={notify} />}
+          {page === 'drill' && <Drill key={resetVersion} active prefs={prefs} setPreference={setPreference} store={store} setStore={setStore} notify={notify} items={deckItems} />}
+          {page === 'pacer' && <Pacer active prefs={prefs} setPreference={setPreference} notify={notify} items={deckItems} />}
           {page === 'alike' && <LookalikeTab active store={store} setStore={setStore} />}
-          {page === 'progress' && <ProgressTab store={store} setStore={setStore} notify={notify} />}
+          {page === 'progress' && <ProgressTab store={store} setStore={setStore} notify={notify} items={deckItems} />}
           {page === 'kanji' && (
             <KanjiDeck
               prefs={prefs}
@@ -613,7 +669,10 @@ export default function App() {
               notify={notify}
             />
           )}
-          {page === 'add' && <AddWords customItems={store.customItems || []} onAdd={addCustomItem} onDelete={deleteCustomItem} />}
+          {page === 'add' && <AddWords customItems={store.customItems || []} onAdd={addCustomItem} onDelete={deleteCustomItem} items={deckItems} />}
+          {page === 'decks' && profile?.is_admin && (
+            <DeckAdmin items={deckItems} loadError={deckCatalogError} onSaveItem={saveDeckItem} onDeleteItem={deleteDeckItem} />
+          )}
           {page === 'account' && (
             <AccountPage
               user={authSession?.user || null}
@@ -631,7 +690,7 @@ export default function App() {
         </main>
 
       </div>
-      <SettingsBar page={page} prefs={prefs} setPreference={setPreference} resetSection={resetSection} resetAll={resetAll} notify={notify} onDrillReset={() => setResetVersion((version) => version + 1)} customItems={store.customItems || []} />
+      <SettingsBar page={page} prefs={prefs} setPreference={setPreference} resetSection={resetSection} resetAll={resetAll} notify={notify} onDrillReset={() => setResetVersion((version) => version + 1)} customItems={store.customItems || []} items={deckItems} />
       <Toast message={toast} />
       {adminNotice && (
         <div className="account-overlay" role="presentation" onMouseDown={(event) => {

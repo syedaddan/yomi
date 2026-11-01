@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ITEMS, PHRASES } from '../data.js';
+import { ITEMS } from '../data.js';
 import { ChoiceButtons, InfoButton } from './shared.jsx';
 
 const DECKS = [
@@ -65,10 +65,10 @@ function ToggleSetting({ label, pressed, onClick, info, id }) {
   );
 }
 
-export default function SettingsBar({ page, prefs, setPreference, resetSection, resetAll, onDrillReset, notify, customItems = [] }) {
+export default function SettingsBar({ page, prefs, setPreference, resetSection, resetAll, onDrillReset, notify, customItems = [], items = ITEMS }) {
   const [openSection, setOpenSection] = useState('');
   const bar = useRef(null);
-  const allItems = useMemo(() => [...ITEMS, ...customItems], [customItems]);
+  const allItems = useMemo(() => [...items, ...customItems], [items, customItems]);
   const deckThemes = useMemo(() => [...new Set(allItems.map((item) => `${item.deck}|${item.theme}`))], [allItems]);
   const themeNames = useMemo(() => {
     const counts = {};
@@ -80,9 +80,10 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
   }, [deckThemes]);
   const selectedThemes = prefs.themes.filter((key) => deckThemes.includes(key));
   const availableThemes = deckThemes.filter((key) => !selectedThemes.includes(key));
-  const phraseThemes = [...new Set(PHRASES.map((phrase) => phrase.theme))];
-  const phrases = PHRASES.filter((phrase) => !prefs.paceTheme || phrase.theme === prefs.paceTheme);
-  const selectedPhrase = PHRASES.find((phrase) => phrase.id === prefs.pacePhraseId) || phrases[0];
+  const phraseItems = items.filter((item) => item.deck === 'phr');
+  const phraseThemes = [...new Set(phraseItems.map((phrase) => phrase.theme))];
+  const phrases = phraseItems.filter((phrase) => !prefs.paceTheme || phrase.theme === prefs.paceTheme);
+  const selectedPhrase = phraseItems.find((phrase) => phrase.id === prefs.pacePhraseId) || phrases[0];
   const showDock = ['drill', 'kanji', 'pacer', 'alike'].includes(page);
   const showDisplayOptions = page === 'drill' || page === 'kanji' || page === 'pacer';
   const showSettingsControls = page === 'drill' || page === 'pacer' || page === 'alike';
@@ -132,7 +133,7 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
 
   function changePaceTheme(theme) {
     setPreference('paceTheme', theme);
-    const nextPhrase = PHRASES.find((phrase) => !theme || phrase.theme === theme);
+    const nextPhrase = phraseItems.find((phrase) => !theme || phrase.theme === theme);
     if (nextPhrase) setPreference('pacePhraseId', nextPhrase.id);
   }
 

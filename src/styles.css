@@ -377,6 +377,26 @@ td.num, th.num { text-align: right; font-family: var(--f-mono); font-variant-num
 .custom-word-list li small { color: var(--muted); }
 .custom-word-list li a { color: var(--accent); font-size: .82rem; }
 .custom-word-list li .btn { margin-left: auto; }
+.custom-word-deck { margin-top: 12px; }
+.custom-word-deck h3 { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; font-size: .9rem; }
+.custom-word-deck h3 span { color: var(--muted); font: 500 .7rem var(--f-mono); }
+.deck-admin { display: flex; flex-direction: column; gap: 16px; max-width: 900px; margin-inline: auto; }
+.deck-admin-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.deck-admin-heading h1 { font-size: 1.35rem; }
+.deck-admin-heading .hint { margin-top: 4px; font-size: .82rem; }
+.deck-admin-controls { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr); gap: 12px; }
+.deck-admin-controls label, .deck-item-editor > label { display: flex; flex-direction: column; gap: 5px; font-size: .82rem; font-weight: 650; }
+.deck-admin-controls input, .deck-admin-controls select, .deck-item-editor textarea { width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font: inherit; }
+.deck-item-editor { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+.deck-item-editor h2 { font-size: 1.05rem; }
+.deck-item-editor textarea { min-height: 280px; resize: vertical; font: .82rem/1.5 var(--f-mono); }
+.deck-item-editor .hint { font-size: .78rem; }
+.deck-admin-actions, .deck-admin-item-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.deck-admin-list { display: flex; flex-direction: column; gap: 8px; padding: 0; margin: 0; list-style: none; }
+.deck-admin-list > li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.deck-admin-item-copy { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; min-width: 0; }
+.deck-admin-item-copy .jp { font-size: 1.12rem; }
+.deck-admin-item-copy small { color: var(--muted); }
 @media (max-width: 620px) {
   body { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
   .kanji-deck { padding: 14px; gap: 14px; }
@@ -389,6 +409,10 @@ td.num, th.num { text-align: right; font-family: var(--f-mono); font-variant-num
   .kanji-navigation .btn { padding-inline: 11px; }
   .add-word-fields { grid-template-columns: minmax(0, 1fr); }
   .add-words-card { gap: 14px; padding: 14px; }
+  .deck-admin { padding: 14px; }
+  .deck-admin-heading { align-items: flex-start; }
+  .deck-admin-controls { grid-template-columns: minmax(0, 1fr); }
+  .deck-admin-list > li { align-items: flex-start; flex-direction: column; }
   .human-search { gap: 7px; }
   .human-search legend { width: 100%; }
   .settings-dock-inner { gap: 6px; }

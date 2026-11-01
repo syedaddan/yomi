@@ -28,7 +28,7 @@ function cardText(item, spaced) {
   return item.deck === 'phr' && spaced ? chunks.join(' ') : chunks.join('');
 }
 
-export default function Drill({ prefs, setPreference, store, setStore, notify, active }) {
+export default function Drill({ prefs, setPreference, store, setStore, notify, active, items = ITEMS }) {
   const [history, setHistory] = useState([]);
   const [position, setPosition] = useState(-1);
   const [phase, setPhase] = useState('front');
@@ -39,8 +39,8 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
   const initialized = useRef(false);
   const shownAt = useRef(performance.now());
   const allItems = useMemo(
-    () => [...ITEMS, ...(store.customItems || []).map(itemFromCustomRecord)],
-    [store.customItems],
+    () => [...items, ...(store.customItems || []).map(itemFromCustomRecord)],
+    [items, store.customItems],
   );
   const pool = useMemo(
     () => allItems.filter((item) => prefs.decks[item.deck] &&

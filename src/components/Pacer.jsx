@@ -1,16 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { moras, particleRomaji, romaji } from '../core.js';
-import { PHRASES } from '../data.js';
+import { ITEMS } from '../data.js';
 import { femaleSource, stopAudio } from '../audio.js';
 
-export default function Pacer({ prefs, setPreference, notify, active }) {
+export default function Pacer({ prefs, setPreference, notify, active, items = ITEMS }) {
   const [running, setRunning] = useState(false);
   const [highlight, setHighlight] = useState(-1);
   const [note, setNote] = useState('');
   const frame = useRef(0);
   const timer = useRef(0);
   const player = useRef(null);
-  const phraseList = PHRASES.filter((item) => !prefs.paceTheme || item.theme === prefs.paceTheme);
+  const phraseList = items.filter((item) => item.deck === 'phr' && (!prefs.paceTheme || item.theme === prefs.paceTheme));
   const requestedIndex = phraseList.findIndex((phrase) => phrase.id === prefs.pacePhraseId);
   const index = requestedIndex < 0 ? 0 : requestedIndex;
   const item = phraseList[index];
