@@ -93,16 +93,16 @@ export default function AccountPage({
       setBusy(false);
       setDeleteConfirmation(false);
     }
+  }
 
-    async function signOut() {
-      setBusy(true);
-      setError('');
-      try {
-        await onSignOut();
-      } catch (signOutError) {
-        setError(signOutError instanceof Error ? signOutError.message : 'Could not sign out.');
-        setBusy(false);
-      }
+  async function signOut() {
+    setBusy(true);
+    setError('');
+    try {
+      await onSignOut();
+    } catch (signOutError) {
+      setError(signOutError instanceof Error ? signOutError.message : 'Could not sign out.');
+      setBusy(false);
     }
   }
 
