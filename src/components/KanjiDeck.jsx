@@ -56,9 +56,6 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext }) {
     || kanjiDeck.groups.find((group) => group.id === unlocked[unlocked.length - 1]);
   const nextGroup = kanjiDeck.groups[unlocked.length] || null;
   const lessonGroups = kanjiDeck.groups.filter((group) => !group.additional);
-  const lessonGroupIndex = lessonGroups.findIndex((group) => group.id === activeGroup.id);
-  const lessonCharacterCount = lessonGroups.reduce((count, group) => count + group.characters.length, 0);
-  const extraCharacterCount = kanjiDeck.kanji.length - lessonCharacterCount;
   const cards = useMemo(() => {
     const groupCards = kanjiDeck.kanji.filter((entry) => entry.groupId === activeGroup.id);
     const search = query.trim().toLocaleLowerCase();
@@ -106,28 +103,11 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext }) {
       <div className="stack">
         <div className="card kanji-deck">
           <div className="kanji-deck-heading">
-            <div>
-              <div className="stage-top">
-                <span>{activeGroup.additional
-                  ? 'Previously included extras'
-                  : `Kanji lessons · Group ${lessonGroupIndex + 1} of ${lessonGroups.length}`}</span>
-                <span className="mono">{activeGroup.characters.length} characters</span>
-              </div>
-              <h2>Practice one lesson group at a time</h2>
-            </div>
-            <label className="kanji-furigana-toggle">
-              <span>Furigana</span>
-              <button
-                type="button"
-                className="choice-button"
-                aria-pressed={showFurigana}
-                onClick={() => setShowFurigana((value) => !value)}
-              >{showFurigana ? 'On' : 'Off'}</button>
-            </label>
+            <h2>Kanji practice</h2>
           </div>
           <div className="kanji-group-controls">
             <label className="kanji-search">
-              <span>Lesson group</span>
+              <span>Lesson</span>
               <select value={activeGroup.id} onChange={(event) => changeGroup(event.target.value)}>
                 {kanjiDeck.groups.map((group, groupPosition) => (
                   <option
@@ -136,37 +116,36 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext }) {
                     disabled={!unlocked.includes(group.id)}
                   >
                     {group.additional
-                      ? `Extra · ${group.characters.join('')}`
-                      : `Group ${groupPosition + 1} · ${group.characters.join('')}`}
+                      ? 'Extras'
+                      : `Lesson ${groupPosition + 1}`}
                     {!unlocked.includes(group.id) ? ' · Locked' : ''}
                   </option>
                 ))}
               </select>
             </label>
             <div className="kanji-unlock">
-              <p className="hint">
-                {unlocked.length} of {kanjiDeck.groups.length} groups unlocked · {lessonCharacterCount} lesson kanji
-                {extraCharacterCount ? ` + ${extraCharacterCount} from the previous deck` : ''}
-              </p>
+              <p className="hint">{Math.min(unlocked.length, lessonGroups.length)} / {lessonGroups.length} unlocked</p>
               {nextGroup ? (
                 <button type="button" className="btn primary" onClick={unlockGroup}>
-                  Unlock next group ({nextGroup.characters.length} kanji)
+                  {nextGroup.additional ? 'Unlock extras' : 'Unlock next lesson'}
                 </button>
               ) : (
-                <p className="hint">All lesson groups unlocked.</p>
+                <p className="hint">All lessons unlocked</p>
               )}
             </div>
-            <p className="hint kanji-source">Source: {activeGroup.sourceTitle}</p>
           </div>
-          <label className="kanji-search">
-            <span>Search this group by kanji, reading, or example word</span>
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => changeSearch(event.target.value)}
-              placeholder="Try 学, がくせい, or student"
-            />
-          </label>
+          <details className="kanji-search-disclosure">
+            <summary>Search this lesson</summary>
+            <label className="kanji-search">
+              <span>Kanji, reading, or word</span>
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => changeSearch(event.target.value)}
+                placeholder="Search"
+              />
+            </label>
+          </details>
 
           {!card ? (
             <p className="empty">No kanji in this group match that search.</p>
@@ -174,12 +153,11 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext }) {
             <>
               <div className="kanji-card" aria-live="polite">
                 <div className="kanji-card-status">
-                  <span>Character {index + 1} of {cards.length}</span>
-                  <span className="hint">{card.grade ? `Kyoiku grade ${card.grade}` : 'Lesson list'}</span>
+                  <span>{index + 1} / {cards.length}</span>
                 </div>
                 <div className="kanji-prompt" lang="ja">{card.character}</div>
                 <button type="button" className="btn primary" onClick={() => setRevealed((value) => !value)}>
-                  {revealed ? 'Hide answer' : 'Show readings and words'}
+                  {revealed ? 'Hide answer' : 'Show answer'}
                 </button>
                 {revealed && (
                   <div className="kanji-answer">
@@ -189,8 +167,16 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext }) {
                       <ReadingList label="Kun'yomi" readings={card.kun} />
                     </div>
                     <div className="kanji-examples-heading">
-                      <h3>Words with {card.character}</h3>
-                      <span className="hint">{card.words.length} examples · pitch accents from Kanjium</span>
+                      <h3>Examples</h3>
+                      <label className="kanji-furigana-toggle">
+                        <span>Furigana</span>
+                        <button
+                          type="button"
+                          className="choice-button"
+                          aria-pressed={showFurigana}
+                          onClick={() => setShowFurigana((value) => !value)}
+                        >{showFurigana ? 'On' : 'Off'}</button>
+                      </label>
                     </div>
                     <div className="kanji-examples">
                       {card.words.map((word) => (
@@ -214,9 +200,9 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext }) {
           )}
         </div>
         <p className="kanji-attribution">
-          Character readings and meanings: <a href="https://www.edrdg.org/kanjidic/kanjidic2.xml" target="_blank" rel="noopener noreferrer">KANJIDIC2</a>
-          {' '}© EDRDG, CC BY-SA 4.0. Example vocabulary and pitch accents: <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener noreferrer">Kanjium</a>
-          {' '}by Uros O., CC BY-SA 4.0.
+          <a href="https://www.edrdg.org/kanjidic/kanjidic2.xml" target="_blank" rel="noopener noreferrer">KANJIDIC2</a>
+          {' '}© EDRDG · <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener noreferrer">Kanjium</a>
+          {' '}© Uros O. · CC BY-SA 4.0
         </p>
       </div>
     </section>
