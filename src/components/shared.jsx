@@ -38,7 +38,7 @@ export function VoiceButtons({ value, onChange, attribute = 'data-voice' }) {
         <button className="choice-button" {...{ [attribute]: 'female' }} aria-pressed={value !== 'recording'} onClick={() => onChange('female')}>Female VOICEVOX</button>
       </div>
       <InfoButton label="Voice information">
-        Recording plays a human clip when available and otherwise uses the female synthetic voice. Female VOICEVOX clips use 九州そら; their pitch may differ from dictionary marks. Some alternate recordings use a Kansai accent.
+        Recording plays this word's curated human clip. Female VOICEVOX clips use 九州そら; their pitch may differ from dictionary marks. Some alternate recordings use a Kansai accent.
       </InfoButton>
     </div>
   );

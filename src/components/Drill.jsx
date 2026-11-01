@@ -49,6 +49,7 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
   );
   const entry = history[position];
   const item = entry?.item || null;
+  const hasCuratedRecording = Boolean(item?.audio || item?.humanAudioId || item?.humanAudioUrl);
 
   useEffect(() => {
     if (history.length || prefs.mode === 'sprint' || initialized.current) return;
@@ -224,12 +225,12 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
       } else if (phase === 'revealed' && ['1', '2', '3'].includes(event.key)) {
         rate(({ 1: 'miss', 2: 'slow', 3: 'got' })[event.key]);
       } else if (phase === 'revealed' && event.key.toLowerCase() === 'p' && item) {
-        playItem(item, { voice: prefs.voice, onError: notify });
+        playItem(item, { voice: hasCuratedRecording ? prefs.voice : 'female', onError: notify });
       }
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [active, sprint, prefs.mode, phase, item, prefs.voice, position, history, pool, store.stats]);
+  }, [active, sprint, prefs.mode, phase, item, hasCuratedRecording, prefs.voice, position, history, pool, store.stats]);
 
   const sprintScore = session.ms.length
     ? (session.mora / (session.ms.reduce((sum, value) => sum + value, 0) / 1000)).toFixed(1)
@@ -288,10 +289,12 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
                     <PitchLine item={item} showRomaji={prefs.romaji} showMarks={prefs.marks} />
                     <div className="meaning">{item.en}</div>
                     <div className="legend"><span className="lh">high (bar above)</span><span className="ll">low (bar below)</span><span>↘ pitch drops here</span></div>
-                    <div className="voice-row"><span className="hint">Voice</span><VoiceButtons value={prefs.voice} onChange={(value) => setPreference('voice', value)} /></div>
+                    {hasCuratedRecording && (
+                      <div className="voice-row"><span className="hint">Voice</span><VoiceButtons value={prefs.voice} onChange={(value) => setPreference('voice', value)} /></div>
+                    )}
                     <div className="audio-control-group">
                       <div className="audio-row">
-                        <button className="btn primary" data-play="main" onClick={() => playItem(item, { voice: prefs.voice, slow, onError: notify })}>▶ Play <kbd>P</kbd></button>
+                        <button className="btn primary" data-play="main" onClick={() => playItem(item, { voice: hasCuratedRecording ? prefs.voice : 'female', slow, onError: notify })}>▶ Play <kbd>P</kbd></button>
                         <button className="btn" aria-pressed={slow} onClick={() => setSlow((value) => !value)}>{slow ? 'Slow: on' : 'Slow: off'}</button>
                         {item.alt && <button className="btn" onClick={() => playItem(item, { voice: prefs.voice, alternate: true, slow, onError: notify })}>▶ Other recording</button>}
                       </div>

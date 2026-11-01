@@ -96,6 +96,10 @@ export async function playItem(item, { voice, alternate = false, slow = false, o
   }
 
   if (voice === 'recording') {
+    if (!item.humanAudioId && !item.humanAudioUrl && !item.audio) {
+      onError('No curated recording is available for this item.');
+      return;
+    }
     try {
       if (item.humanAudioId) {
         const recording = await loadCustomAudio(item.humanAudioId);
@@ -113,6 +117,7 @@ export async function playItem(item, { voice, alternate = false, slow = false, o
       }
     } catch (error) {
       onError(error instanceof Error ? error.message : 'The human recording could not play.');
+      return;
     }
   }
 

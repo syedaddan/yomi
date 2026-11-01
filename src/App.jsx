@@ -175,7 +175,7 @@ export default function App() {
 
   return (
     <>
-      <div className={`wrap${page === 'drill' ? ' drill-layout' : ''}${prefs.romaji ? '' : ' no-rom'}${prefs.marks ? '' : ' no-mark'}`} id="app">
+      <div className={`wrap${prefs.romaji ? '' : ' no-rom'}${prefs.marks ? '' : ' no-mark'}`} id="app">
         <header className="top">
           <div className="top-in">
             <div className="brand">
