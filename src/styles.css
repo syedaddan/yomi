@@ -244,8 +244,11 @@ td.num, th.num { text-align: right; font-family: var(--f-mono); font-variant-num
 .kanji-deck-heading { align-items: flex-start; }
 .kanji-deck-heading h2 { margin-top: 5px; }
 .kanji-furigana-toggle { flex: none; font-size: .82rem; font-weight: 650; }
+.kanji-group-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px 16px; }
 .kanji-search { display: flex; flex-direction: column; gap: 5px; font-size: .82rem; font-weight: 650; }
-.kanji-search input { width: 100%; min-height: 42px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font: inherit; }
+.kanji-search input, .kanji-search select { width: 100%; min-height: 42px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font: inherit; }
+.kanji-unlock { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.kanji-source { grid-column: 1 / -1; overflow-wrap: anywhere; }
 .kanji-card { display: flex; flex-direction: column; gap: 16px; border-top: 1px solid var(--line); padding-top: 16px; }
 .kanji-card-status { font-size: .82rem; color: var(--muted); }
 .kanji-prompt { align-self: center; font-family: var(--f-kana); font-size: clamp(5rem, 24vw, 9rem); line-height: 1.15; padding: 4px 0; }
@@ -308,6 +311,9 @@ td.num, th.num { text-align: right; font-family: var(--f-mono); font-variant-num
   body { padding-bottom: 150px; }
   .kanji-deck { padding: 14px; gap: 14px; }
   .kanji-deck-heading { flex-wrap: wrap; }
+  .kanji-group-controls { grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+  .kanji-unlock { align-items: flex-start; }
+  .kanji-unlock .btn { width: 100%; }
   .kanji-reading-grid { grid-template-columns: minmax(0, 1fr); }
   .kanji-examples { grid-template-columns: minmax(0, 1fr); }
   .kanji-navigation { gap: 7px; }

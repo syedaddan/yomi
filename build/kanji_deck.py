@@ -1,4 +1,4 @@
-"""Build the beginner kanji deck from KANJIDIC2 and Kanjium source files."""
+"""Build the lesson-group kanji deck from KANJIDIC2 and Kanjium source files."""
 import gzip
 import json
 import re
@@ -8,11 +8,10 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
-KANJI = tuple(
-    "一七万三上下中九二五人今休先入八六円出分前北十千午半南友口古右名四"
-    "国土外多大天女子学安小少山川左年店広後手新日時間書月木本来東校母"
-    "毎気水火父生男白百目社空立耳聞自行西見言話語読買車週道金長雨電食飲高早"
+GROUPS = json.loads(
+    Path(__file__).with_name("kanji_groups.json").read_text(encoding="utf-8")
 )
+KANJI = tuple(character for group in GROUPS for character in group["characters"])
 
 WORDS = """
 一人	ひとり	one person
@@ -248,9 +247,35 @@ def load_accents(path):
     return accents
 
 
-def build(kanjidic_path, accents_path):
+def load_jukugo(path, accents):
+    examples = []
+    with Path(path).open(encoding="utf-8") as source:
+        for line in source:
+            fields = line.rstrip("\n").split("\t")
+            if len(fields) < 11:
+                continue
+            _, _, word, reading = fields[:4]
+            patterns = accents.get((normalize(word), normalize(reading)))
+            if not patterns:
+                continue
+            meaning = re.sub(r"\[[^\]]*\]\s*|\{\d+\}\s*", "", fields[8]).strip()
+            meaning = meaning.replace(";", "; ")
+            if not meaning:
+                continue
+            frequency = {"Very common": 0, "Common": 1, "Uncommon": 2, "Rare": 3}
+            examples.append({
+                "word": word,
+                "reading": reading,
+                "meaning": meaning,
+                "accents": patterns,
+                "frequency": frequency.get(fields[10], 4),
+            })
+    return examples
+
+
+def build(kanjidic_path, accents_path, jukugo_path):
     if len(set(KANJI)) != len(KANJI):
-        raise ValueError("The curated N5 character list contains duplicates")
+        raise ValueError("The lesson groups contain duplicate kanji")
     kanji = load_kanjidic(kanjidic_path)
     accents = load_accents(accents_path)
     words = []
@@ -275,24 +300,62 @@ def build(kanjidic_path, accents_path):
         })
     if missing:
         raise ValueError(f"Kanjium accent entries not found: {', '.join(missing)}")
+    seen_words = {(word["word"], word["reading"]) for word in words}
+    jukugo = load_jukugo(jukugo_path, accents)
+    group_by_character = {
+        character: group["id"]
+        for group in GROUPS
+        for character in group["characters"]
+    }
     for item in kanji.values():
-        item["words"] = [word for word in words if item["character"] in word["word"]]
+        item["groupId"] = group_by_character[item["character"]]
+        item["words"] = [
+            word for word in words if item["character"] in word["word"]
+        ]
+        if not item["words"]:
+            candidates = sorted(
+                (
+                    word for word in jukugo
+                    if item["character"] in word["word"]
+                    and (word["word"], word["reading"]) not in seen_words
+                ),
+                key=lambda word: (word["frequency"], len(word["word"]), word["word"]),
+            )
+            if not candidates:
+                raise ValueError(
+                    f"No Kanjium example word for {item['character']}"
+                )
+            word = candidates[0]
+            item["words"].append({
+                key: value for key, value in word.items() if key != "frequency"
+            })
+            identity = (word["word"], word["reading"])
+            if identity not in seen_words:
+                words.append({
+                    key: value for key, value in word.items() if key != "frequency"
+                })
+                seen_words.add(identity)
         if not item["on"] and not item["kun"]:
             raise ValueError(f"KANJIDIC2 has no Japanese readings for {item['character']}")
         if not item["meanings"]:
             raise ValueError(f"KANJIDIC2 has no English meaning for {item['character']}")
         if not item["words"]:
             raise ValueError(f"No Kanjium example word for {item['character']}")
-    return {"kanji": [kanji[character] for character in KANJI], "words": words}
+    return {
+        "groups": GROUPS,
+        "kanji": [kanji[character] for character in KANJI],
+        "words": words,
+    }
 
 
 def main():
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         raise SystemExit(
-            "usage: python build/kanji_deck.py <kanjidic2.xml[.gz]> <accents.txt> <output.json>"
+            "usage: python build/kanji_deck.py <kanjidic2.xml[.gz]> <accents.txt> "
+            "<jukugo.txt> <output.json>"
         )
-    output = Path(sys.argv[3])
-    data = build(sys.argv[1], sys.argv[2])
+    output = Path(sys.argv[4])
+    data = build(sys.argv[1], sys.argv[2], sys.argv[3])
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {len(data['kanji'])} kanji and {len(data['words'])} pitch-accented words to {output}")

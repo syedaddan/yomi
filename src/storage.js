@@ -48,6 +48,27 @@ export function preferencesFrom(store) {
   };
 }
 
+export function getUnlockedKanjiGroups(savedGroupIds, groups) {
+  const saved = new Set(
+    Array.isArray(savedGroupIds)
+      ? savedGroupIds.filter((groupId) => typeof groupId === 'string')
+      : [],
+  );
+  const unlocked = [];
+  for (const group of groups) {
+    if (!saved.has(group.id)) break;
+    unlocked.push(group.id);
+  }
+  if (!unlocked.length && groups.length) unlocked.push(groups[0].id);
+  return unlocked;
+}
+
+export function unlockNextKanjiGroup(savedGroupIds, groups) {
+  const unlocked = getUnlockedKanjiGroups(savedGroupIds, groups);
+  if (unlocked.length < groups.length) unlocked.push(groups[unlocked.length].id);
+  return unlocked;
+}
+
 export function saveStore(store) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));

@@ -16,7 +16,7 @@ The owner's goals (from the Claude Project "Japanese Reading"):
 | **Speed** (read words and whole phrases without stalling on characters) | Drill with timed reads, Flash mode (word hides after N ms), 60-second Sprint (mora/min), Phrase pacer (highlight moves at a set mora/s), weighted shuffle that repeats slow and missed cards |
 | **Accuracy** (pronunciation + intonation) | Every word shows pitch-accent marks (red bar above = high, blue bar below = low, ↘ = drop, ↗ = question). Human recordings are preferred where available; female VOICEVOX is the synthetic voice. |
 | **Correctness** (confusable characters) | "Look-alikes" page: シ/ツ, ソ/ン, ぬ/め, ね/れ/わ, etc., with quizzes and tips. Progress page tracks per-item misses |
-| **Kanji** | N5-focused study cards show KANJIDIC2 on/kun readings and Kanjium-pitched example words, with a furigana toggle |
+| **Kanji** | Study ordered lesson groups with KANJIDIC2 on/kun readings and Kanjium-pitched example words; unlock groups one at a time |
 
 Human clips are preferred for playback when available. Every custom word also gets a female VOICEVOX clip, even when a human recording is found.
 
@@ -30,7 +30,7 @@ Human clips are preferred for playback when available. Every custom word also ge
   - Keys: Space/Enter reveal, P play, 1/2/3 rate, ←/→ back/forward, X (sprint miss).
 - **Phrase pacer section**: pick a phrase, set speed (mora/s), highlight walks the moras. "Speak along" plays a female VOICEVOX clip and the highlight is driven by `audio.currentTime` against exact per-mora onset times (so voice and highlight cannot drift). Previous / Next (B / N, ← →).
 - **Add words section**: add Hiragana or Katakana words to a browser-local deck with meaning, theme, optional dictionary pitch, source link, and optional human audio. Search for human audio first; generating a female VOICEVOX clip is always required. Difficult starter words include コロナウイルス, きょうりゅう, and きゅうきゅうしゃ.
-- **Kanji section**: study a curated 100-character N5-focused set. Reveal KANJIDIC2 on/kun readings and example compounds with Kanjium pitch accents; search by character, reading, meaning, or example and toggle furigana.
+- **Kanji section**: study 49 ordered lesson groups containing 272 unique characters parsed from the shared filenames, plus a final group preserving 立 and 耳 from the previous deck. The first group (一 through 十) starts unlocked; unlock later groups sequentially. Unlock state is saved in this browser. Reveal KANJIDIC2 on/kun readings and example compounds with Kanjium pitch accents, search within the active group, and toggle furigana.
 - **Look-alikes section**: 20-item quizzes over confusable sets.
 - **Progress section**: per-session and saved stats (see the section).
 - Light/dark theme (follows OS), phone-friendly layout, keyboard friendly. Romaji and pitch-mark information buttons remain fully visible beside their controls in the bottom dock; the Yomi mark uses the app's blue accent.
@@ -169,10 +169,11 @@ python3 tts/gen_female.py     # female bundle + ttsF/tlF/tendF
 ```
 Check each script's header for exact arguments; they use `ROOT`-relative paths, so run them from anywhere.
 
-To regenerate the Kanji data, download [KANJIDIC2](https://www.edrdg.org/kanjidic/kanjidic2.xml.gz) and [Kanjium accents.txt](https://github.com/mifunetoshiro/kanjium/blob/master/data/source_files/raw/accents.txt), then run:
+To regenerate the Kanji data, download [KANJIDIC2](https://www.edrdg.org/kanjidic/kanjidic2.xml.gz), [Kanjium accents.txt](https://github.com/mifunetoshiro/kanjium/blob/master/data/source_files/raw/accents.txt), and [Kanjium jukugo.txt](https://github.com/mifunetoshiro/kanjium/blob/master/data/source_files/jukugo.txt), then run:
 ```
-python3 build/kanji_deck.py <kanjidic2.xml.gz> <accents.txt> out/kanji.json
+python3 build/kanji_deck.py <kanjidic2.xml.gz> <accents.txt> <jukugo.txt> out/kanji.json
 ```
+The ordered groups and original presentation filenames are recorded in `build/kanji_groups.json`. The first filename names the range 1–10, represented as 一 through 十. The filenames identify 272 unique characters; slide contents were not inspected, so characters shown only inside slides are not included. The final extra group preserves 立 and 耳 from the earlier deck.
 
 Curated deck audio is generated into `out/audio/female_voice.mp3` before building and ships with the static site; the hosted site does not need a running VOICEVOX engine for its built-in words. To add personal words from the site, run the local VOICEVOX Engine with browser CORS enabled (for example, `run.exe --cors_policy_mode all` on Windows), then open the **Add words** section. Those words and recordings stay in that browser.
 
@@ -182,7 +183,7 @@ Curated deck audio is generated into `out/audio/female_voice.mp3` before buildin
 - Within phrases each chunk uses its own dictionary pitch; real speech shifts pitch across chunks. A visible note says so.
 - 64 hiragana words and 36 of 40 phrases have no real Tokyo-accent recording. Katakana has none. These use VOICEVOX.
 - No microphone / pronunciation scoring yet (the "accuracy" goal is only listening + marks so far).
-- Kanji practice is a curated N5-focused character set with example vocabulary; it is separate from the kana drill and does not yet save kanji progress. Stats are per browser (`localStorage`), no sync or export.
+- Kanji practice is separate from the kana drill. Group unlocks are saved per browser (`localStorage`), but card-level study progress does not sync or export. The filename-derived list has 272 unique characters (plus two preserved from the previous deck), fewer than the approximately 450 estimated from the full slide contents; characters not present in filenames are not included.
 - Progress and preferences stay in this browser's `localStorage`; they do not sync to other devices.
 - The GitHub Pages study site needs an internet connection for Google Fonts and the first lazy load of the bundled female voice. Adding words also requires a locally running VOICEVOX Engine.
 
@@ -194,7 +195,7 @@ The prioritized project roadmap, including deck expansion and user-added vocabul
 
 - Word recordings: WaniKani / Tofugu, CC BY-SA 4.0 (derived mp3s in this repo remain CC BY-SA).
 - Kanji readings and meanings: KANJIDIC2, © Electronic Dictionary Research and Development Group (EDRDG), CC BY-SA 4.0. [Source](https://www.edrdg.org/kanjidic/kanjidic2.xml.gz) · [licence](https://www.edrdg.org/edrdg/licence.html).
-- Pitch accents: Kanjium, including additions and modifications provided by Uros O., CC BY-SA 4.0. [Source](https://github.com/mifunetoshiro/kanjium) · [licence](https://creativecommons.org/licenses/by-sa/4.0/).
+- Example vocabulary and pitch accents: Kanjium, including additions and modifications provided by Uros O., CC BY-SA 4.0. [Source](https://github.com/mifunetoshiro/kanjium) · [licence](https://creativecommons.org/licenses/by-sa/4.0/).
 - Voice: VOICEVOX:九州そら. VOICEVOX's terms require crediting the character. Check the character's terms before commercial use.
 - Page code: yours to license.
 

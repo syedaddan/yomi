@@ -6,7 +6,15 @@ import KanjiDeck from './components/KanjiDeck.jsx';
 import { LookalikeTab, ProgressTab } from './components/StudyTabs.jsx';
 import { InfoButton, SectionNav, Toast } from './components/shared.jsx';
 import SettingsBar from './components/SettingsBar.jsx';
-import { DEFAULT_PREFS, loadStore, preferencesFrom, saveStore } from './storage.js';
+import kanjiDeck from '../out/kanji.json';
+import {
+  DEFAULT_PREFS,
+  getUnlockedKanjiGroups,
+  loadStore,
+  preferencesFrom,
+  saveStore,
+  unlockNextKanjiGroup,
+} from './storage.js';
 
 const pages = ['drill', 'pacer', 'alike', 'progress', 'kanji', 'add'];
 
@@ -145,6 +153,20 @@ export default function App() {
     setStore(nextStore);
   }
 
+  function unlockNextKanjiLesson() {
+    const unlocked = getUnlockedKanjiGroups(store.kanjiUnlockedGroups, kanjiDeck.groups);
+    const nextUnlocked = unlockNextKanjiGroup(store.kanjiUnlockedGroups, kanjiDeck.groups);
+    if (nextUnlocked.length === unlocked.length) return false;
+    const nextStore = { ...store, kanjiUnlockedGroups: nextUnlocked };
+    if (!saveStore(nextStore)) {
+      notify('Could not save your unlocked Kanji lessons in this browser.');
+      return false;
+    }
+    setStore(nextStore);
+    notify('Next Kanji group unlocked.');
+    return true;
+  }
+
   return (
     <>
       <div className={`wrap${prefs.romaji ? '' : ' no-rom'}${prefs.marks ? '' : ' no-mark'}`} id="app">
@@ -170,7 +192,13 @@ export default function App() {
           {page === 'pacer' && <Pacer active prefs={prefs} setPreference={setPreference} notify={notify} />}
           {page === 'alike' && <LookalikeTab active store={store} setStore={setStore} />}
           {page === 'progress' && <ProgressTab store={store} setStore={setStore} notify={notify} />}
-          {page === 'kanji' && <KanjiDeck prefs={prefs} />}
+          {page === 'kanji' && (
+            <KanjiDeck
+              prefs={prefs}
+              unlockedGroupIds={store.kanjiUnlockedGroups}
+              onUnlockNext={unlockNextKanjiLesson}
+            />
+          )}
           {page === 'add' && <AddWords customItems={store.customItems || []} onAdd={addCustomItem} onDelete={deleteCustomItem} />}
         </main>
 

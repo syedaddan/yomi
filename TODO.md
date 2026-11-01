@@ -4,7 +4,7 @@ Priorities are ordered. The first item remains the active priority; completed wo
 
 ## Current priorities
 
-- [x] **Kanji deck** (JLPT N5 first): add furigana controls, on/kun readings, and compound words with pitch; use KANJIDIC2 / Kanjium.
+- [x] **Kanji deck**: add furigana controls, on/kun readings, pitched examples, and sequential unlocks for the ordered lesson groups; use KANJIDIC2 / Kanjium.
 - [ ] **Accounts and cloud-backed user data**: add sign-in, replace browser/session-dependent storage with a database for user details and progress, and cloud file storage for custom-word audio so it persists across sessions and devices.
 - [x] **Expand the Hiragana and Katakana decks** with more useful and difficult-to-pronounce words, including コロナウイルス. Look for an appropriately licensed human recording first, and generate a female VOICEVOX recording for every added item regardless of whether a human recording is found.
 - [x] **Add a word-entry page** for Hiragana and Katakana. Let learners enter a kana word, English meaning, theme, pitch accent (with an unknown option), and human-recording source/audio. Require a human-recording search before saving, and always generate female VOICEVOX audio.

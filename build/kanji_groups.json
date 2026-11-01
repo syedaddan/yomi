@@ -1,0 +1,253 @@
+[
+  {
+    "id": "lesson-01",
+    "sourceTitle": "漢字練習2（1~10）.pptx",
+    "characters": ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
+  },
+  {
+    "id": "lesson-02",
+    "sourceTitle": "漢字練習3（百、千、万）.pptx",
+    "characters": ["百", "千", "万"]
+  },
+  {
+    "id": "lesson-03",
+    "sourceTitle": "漢字練習4　1円　2行　3見.pptx",
+    "characters": ["円", "行", "見"]
+  },
+  {
+    "id": "lesson-04",
+    "sourceTitle": "漢字練習5　4国　5先　6生.pptx",
+    "characters": ["国", "先", "生"]
+  },
+  {
+    "id": "lesson-05",
+    "sourceTitle": "漢字練習6　7日　8本　9大　10人　11友.pptx",
+    "characters": ["日", "本", "大", "人", "友"]
+  },
+  {
+    "id": "lesson-06",
+    "sourceTitle": "漢字練習7 　12話　13休　14土　15会　16学.pptx",
+    "characters": ["話", "休", "土", "会", "学"]
+  },
+  {
+    "id": "lesson-07",
+    "sourceTitle": "漢字練習8 　17来　18金　19分　20木　21月.pptx",
+    "characters": ["来", "金", "分", "木", "月"]
+  },
+  {
+    "id": "lesson-08",
+    "sourceTitle": "漢字練習9　22食　23名　24前　25出　26何.pptx",
+    "characters": ["食", "名", "前", "出", "何"]
+  },
+  {
+    "id": "lesson-09",
+    "sourceTitle": "漢字練習10　27川　28火　29時　30中　31外 .pptx",
+    "characters": ["川", "火", "時", "中", "外"]
+  },
+  {
+    "id": "lesson-10",
+    "sourceTitle": "漢字練習11　32書　33水　34入　35車　36電.pptx",
+    "characters": ["書", "水", "入", "車", "電"]
+  },
+  {
+    "id": "lesson-11",
+    "sourceTitle": "漢字練習12　37語　38住　39所　40年　41番.pptx",
+    "characters": ["語", "住", "所", "年", "番"]
+  },
+  {
+    "id": "lesson-12",
+    "sourceTitle": "漢字練習13　55号　56間　57白　58子　59男.pptx",
+    "characters": ["号", "間", "白", "子", "男"]
+  },
+  {
+    "id": "lesson-13",
+    "sourceTitle": "漢字練習14 　60女　61父　62母　63高　64校.pptx",
+    "characters": ["女", "父", "母", "高", "校"]
+  },
+  {
+    "id": "lesson-14",
+    "sourceTitle": "漢字練習15 　65小　66南　67口　68長　69目.pptx",
+    "characters": ["小", "南", "口", "長", "目"]
+  },
+  {
+    "id": "lesson-15",
+    "sourceTitle": "漢字練習16　70言　71聞　72思　73山　74社.pptx",
+    "characters": ["言", "聞", "思", "山", "社"]
+  },
+  {
+    "id": "lesson-16",
+    "sourceTitle": "漢字練習17　75雨　76帰　77東　78北　79今.pptx",
+    "characters": ["雨", "帰", "東", "北", "今"]
+  },
+  {
+    "id": "lesson-17",
+    "sourceTitle": "漢字練習18 　80買　81田　82少　83方　84上.pptx",
+    "characters": ["買", "田", "少", "方", "上"]
+  },
+  {
+    "id": "lesson-18",
+    "sourceTitle": "漢字練習19 　85下　86右　87左　88毎　89朝.pptx",
+    "characters": ["下", "右", "左", "毎", "朝"]
+  },
+  {
+    "id": "lesson-19",
+    "sourceTitle": "漢字練習20　90理　91由　92読　93気　94作.pptx",
+    "characters": ["理", "由", "読", "気", "作"]
+  },
+  {
+    "id": "lesson-20",
+    "sourceTitle": "漢字練習21　95飲　96店　97新　98週　99夜.pptx",
+    "characters": ["飲", "店", "新", "週", "夜"]
+  },
+  {
+    "id": "lesson-21",
+    "sourceTitle": "漢字練習22　100多　101早　102花　103天　104料.pptx",
+    "characters": ["多", "早", "花", "天", "料"]
+  },
+  {
+    "id": "lesson-22",
+    "sourceTitle": "漢字練習22　105回　106午　107後　108待　109持　110有.pptx",
+    "characters": ["回", "午", "後", "待", "持", "有"]
+  },
+  {
+    "id": "lesson-23",
+    "sourceTitle": "漢字練習23　111旅　112知　113私　114研　115究　116昼.pptx",
+    "characters": ["旅", "知", "私", "研", "究", "昼"]
+  },
+  {
+    "id": "lesson-24",
+    "sourceTitle": "漢字練習24　117飯　118品　119室　120曜　121家　122死.pptx",
+    "characters": ["飯", "品", "室", "曜", "家", "死"]
+  },
+  {
+    "id": "lesson-25",
+    "sourceTitle": "漢字練習24　123試　124験　125注　126意　127手　128映.pptx",
+    "characters": ["試", "験", "注", "意", "手", "映"]
+  },
+  {
+    "id": "lesson-26",
+    "sourceTitle": "漢字練習25　129画　130楽　131止　132明　133考　134員.pptx",
+    "characters": ["画", "楽", "止", "明", "考", "員"]
+  },
+  {
+    "id": "lesson-27",
+    "sourceTitle": "漢字練習26　135使　136発　137着　138事　139族　140紙.pptx",
+    "characters": ["使", "発", "着", "事", "族", "紙"]
+  },
+  {
+    "id": "lesson-28",
+    "sourceTitle": "漢字練習27　141仕　142送　143屋　144教　145去　146世.pptx",
+    "characters": ["仕", "送", "屋", "教", "去", "世"]
+  },
+  {
+    "id": "lesson-29",
+    "sourceTitle": "漢字練習28　147場　148借　149力　150問　151題　152集.pptx",
+    "characters": ["場", "借", "力", "問", "題", "集"]
+  },
+  {
+    "id": "lesson-30",
+    "sourceTitle": "漢字練習29　153貸　154用　155海　156写　157真　158計　.pptx",
+    "characters": ["貸", "用", "海", "写", "真", "計"]
+  },
+  {
+    "id": "lesson-31",
+    "sourceTitle": "漢字練習31　159駅　187運　188転　189習　190工　191台.pptx",
+    "characters": ["駅", "運", "転", "習", "工", "台"]
+  },
+  {
+    "id": "lesson-32",
+    "sourceTitle": "漢字練習31　162園　163課　164商　165議　166登　167部.pptx",
+    "characters": ["園", "課", "商", "議", "登", "部"]
+  },
+  {
+    "id": "lesson-33",
+    "sourceTitle": "漢字練習31　168予　169定　170席　171到　172説　173欠.pptx",
+    "characters": ["予", "定", "席", "到", "説", "欠"]
+  },
+  {
+    "id": "lesson-34",
+    "sourceTitle": "漢字練習31　174参　175加　176支　177内　178連　179絡.pptx",
+    "characters": ["参", "加", "支", "内", "連", "絡"]
+  },
+  {
+    "id": "lesson-35",
+    "sourceTitle": "漢字練習31　186能　204遠　205約　206現　207価　208給.pptx",
+    "characters": ["能", "遠", "約", "現", "価", "給"]
+  },
+  {
+    "id": "lesson-36",
+    "sourceTitle": "漢字練習32　192自　193動　194近　195春　196古　197広.pptx",
+    "characters": ["自", "動", "近", "春", "古", "広"]
+  },
+  {
+    "id": "lesson-37",
+    "sourceTitle": "漢字練習33　198安　199夏　200正　201勉　202強　203物.pptx",
+    "characters": ["安", "夏", "正", "勉", "強", "物"]
+  },
+  {
+    "id": "lesson-38",
+    "sourceTitle": "漢字練習34　211西　212開　213始　214漢　215字　216音.pptx",
+    "characters": ["西", "開", "始", "漢", "字", "音"]
+  },
+  {
+    "id": "lesson-39",
+    "sourceTitle": "漢字練習35　217銀　218魚　219文　220売　221歩　222道.pptx",
+    "characters": ["銀", "魚", "文", "売", "歩", "道"]
+  },
+  {
+    "id": "lesson-40",
+    "sourceTitle": "漢字練習36　223病　224院　225肉　226切　227歌　228牛.pptx",
+    "characters": ["病", "院", "肉", "切", "歌", "牛"]
+  },
+  {
+    "id": "lesson-41",
+    "sourceTitle": "漢字練習37　229館　236半　237代　238夕　239服　240通.pptx",
+    "characters": ["館", "半", "代", "夕", "服", "通"]
+  },
+  {
+    "id": "lesson-42",
+    "sourceTitle": "漢字練習38　241悪　242終　243青　244度　245急　252鳥.pptx",
+    "characters": ["悪", "終", "青", "度", "急", "鳥"]
+  },
+  {
+    "id": "lesson-43",
+    "sourceTitle": "漢字練習39　253主　254走　255親　256以　257弟　258姉.pptx",
+    "characters": ["主", "走", "親", "以", "弟", "姉"]
+  },
+  {
+    "id": "lesson-44",
+    "sourceTitle": "漢字練習40　261足　262体　263重　264医　265者　266赤.pptx",
+    "characters": ["足", "体", "重", "医", "者", "赤"]
+  },
+  {
+    "id": "lesson-45",
+    "sourceTitle": "漢字練習41　267野　306心　320元　333茶　334町　335兄.pptx",
+    "characters": ["野", "心", "元", "茶", "町", "兄"]
+  },
+  {
+    "id": "lesson-46",
+    "sourceTitle": "漢字練習43　336地　337図　354空　355起　356特　357別.pptx",
+    "characters": ["地", "図", "空", "起", "特", "別"]
+  },
+  {
+    "id": "lesson-47",
+    "sourceTitle": "漢字練習44　358風　368犬　369質　370業　371色　372味.pptx",
+    "characters": ["風", "犬", "質", "業", "色", "味"]
+  },
+  {
+    "id": "lesson-48",
+    "sourceTitle": "漢字練習45　234付　235証　246村　247留　248身　249閉.pptx",
+    "characters": ["付", "証", "村", "留", "身", "閉"]
+  },
+  {
+    "id": "lesson-49",
+    "sourceTitle": "漢字練習48　209展　210平　230区　231役　232組　233受.pptx",
+    "characters": ["展", "平", "区", "役", "組", "受"]
+  },
+  {
+    "id": "previous-deck-extras",
+    "sourceTitle": "Previously included deck characters not listed in lesson filenames",
+    "additional": true,
+    "characters": ["立", "耳"]
+  }
+]
