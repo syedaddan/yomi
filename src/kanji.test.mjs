@@ -1,10 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { moras } from './core.js';
 import { getUnlockedKanjiGroups, unlockNextKanjiGroup } from './storage.js';
 
 const deck = JSON.parse(readFileSync(new URL('../out/kanji.json', import.meta.url), 'utf8'));
+const root = fileURLToPath(new URL('../', import.meta.url));
+
+function assertClip(item, description) {
+  assert.ok(item?.file, `${description} has an audio bundle`);
+  assert.ok(Number.isInteger(item.o) && item.o >= 0, `${description} has a valid offset`);
+  assert.ok(Number.isInteger(item.l) && item.l > 0, `${description} has a valid length`);
+  const path = resolve(root, 'out', item.file);
+  assert.ok(existsSync(path), `${description} audio bundle exists`);
+  assert.ok(item.o + item.l <= statSync(path).size, `${description} clip fits inside its bundle`);
+}
 
 test('preserves the ordered lesson groups from the presentation filenames', () => {
   assert.equal(deck.groups.length, 50);
@@ -73,4 +85,27 @@ test('retains dictionary readings and pitch for familiar beginner examples', () 
   assert.deepEqual(day.words.find((word) => word.word === '今日')?.accents, [1]);
   assert.deepEqual(deck.kanji.find((entry) => entry.character === '学')
     .words.find((word) => word.word === '学生')?.accents, [0]);
+});
+
+test('includes synthesized audio for every kanji, listed reading, and example sentence', () => {
+  for (const entry of deck.kanji) {
+    assertClip(entry.audio?.character?.ttsF, `${entry.character} pronunciation`);
+    for (const reading of [...entry.on, ...entry.kun]) {
+      assertClip(entry.audio?.readings?.[reading]?.ttsF, `${entry.character} reading ${reading}`);
+    }
+    for (const word of entry.words) {
+      assert.ok(word.sentence?.text, `${entry.character} / ${word.word} has a sentence`);
+      assertClip(word.sentence.audio?.ttsF, `${entry.character} / ${word.word} sentence`);
+      assert.ok(word.sentence.source, `${entry.character} / ${word.word} sentence has attribution`);
+      if (word.sentence.audio.audio) {
+        const naturalAudio = resolve(root, 'out', word.sentence.audio.audio);
+        assert.ok(existsSync(naturalAudio), `${entry.character} / ${word.word} natural audio exists`);
+        assert.ok(word.sentence.audio.audioAttribution?.author, `${entry.character} / ${word.word} natural audio has credit`);
+        assert.ok(
+          ['CC BY 4.0', 'CC BY-NC 4.0'].includes(word.sentence.audio.audioAttribution.license),
+          `${entry.character} / ${word.word} natural audio has an approved license`,
+        );
+      }
+    }
+  }
 });

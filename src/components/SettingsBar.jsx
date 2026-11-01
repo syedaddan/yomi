@@ -159,13 +159,10 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
           <div className="settings-display-row">
             <div className="display-options" role="group" aria-label="Display options">
               <div className="display-control">
-                {page === 'kanji' ? (
+                <button className="choice-button" type="button" aria-pressed={prefs.romaji} onClick={() => setPreference('romaji', !prefs.romaji)}>Romaji</button>
+                <InfoButton label="Romaji information">Show or hide the Latin-letter reading alongside Japanese text.</InfoButton>
+                {page === 'kanji' && (
                   <button className="choice-button" type="button" aria-pressed={prefs.furigana} onClick={() => setPreference('furigana', !prefs.furigana)}>Furigana</button>
-                ) : (
-                  <>
-                    <button className="choice-button" type="button" aria-pressed={prefs.romaji} onClick={() => setPreference('romaji', !prefs.romaji)}>Romaji</button>
-                    <InfoButton label="Romaji information">Show or hide the Latin-letter reading alongside Japanese text.</InfoButton>
-                  </>
                 )}
               </div>
               {page !== 'pacer' && (
@@ -192,8 +189,8 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
             ><span aria-hidden="true">↺</span> Reset all</button>
           </div>
         )}
-        {showSettingsControls && <div className="settings-controls-row">
-            <div className="settings-scroll">
+        {(showSettingsControls || page === 'kanji') && <div className="settings-controls-row">
+            {showSettingsControls && <div className="settings-scroll">
               {page === 'drill' && (
             <>
               <SettingPanel
@@ -315,7 +312,7 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
               />
             </SettingPanel>
               )}
-            </div>
+            </div>}
             {page === 'drill' && selectedThemes.length > 0 && (
               <div className="selected-theme-strip" aria-label="Selected themes">
                 {selectedThemes.map((key) => {
@@ -325,9 +322,7 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
                 })}
               </div>
             )}
-            {!showDisplayOptions && (
-              <button className="reset-all" type="button" aria-label="Reset all settings" title="Reset all settings" onClick={resetAll}><span aria-hidden="true">↺</span> Reset all</button>
-            )}
+            <button className="reset-all" type="button" aria-label="Reset all settings" title="Reset all settings" onClick={resetAll}><span aria-hidden="true">↺</span> Reset all</button>
         </div>}
       </div>
     </aside>

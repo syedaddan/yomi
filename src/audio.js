@@ -3,7 +3,7 @@ import { loadCustomAudio } from './customAudio.js';
 const baseUrl = import.meta.env.BASE_URL;
 let activeAudio = null;
 let activeObjectUrl = null;
-let femaleBundlePromise = null;
+const femaleBundlePromises = new Map();
 const femaleObjectUrls = new Map();
 
 export function audioUrl(path) {
@@ -45,21 +45,23 @@ function playBlob(blob, rate = 1) {
 
 export function femaleSource(item) {
   if (!item.ttsF) return Promise.reject(new Error('No female clip for this item.'));
-  const key = item.ttsF.o;
+  const bundle = item.ttsF.file || 'audio/female_voice.mp3';
+  const key = `${bundle}:${item.ttsF.o}`;
   if (femaleObjectUrls.has(key)) return Promise.resolve(femaleObjectUrls.get(key));
-  if (!femaleBundlePromise) {
-    femaleBundlePromise = fetch(audioUrl('audio/female_voice.mp3'))
+  if (!femaleBundlePromises.has(bundle)) {
+    const request = fetch(audioUrl(bundle))
       .then((response) => {
         if (!response.ok) throw new Error(`Female voice bundle request failed (${response.status}).`);
         return response.arrayBuffer();
       })
       .catch((error) => {
-        femaleBundlePromise = null;
+        femaleBundlePromises.delete(bundle);
         throw error;
       });
+    femaleBundlePromises.set(bundle, request);
   }
-  return femaleBundlePromise.then((buffer) => {
-    const blob = new Blob([buffer.slice(key, key + item.ttsF.l)], { type: 'audio/mpeg' });
+  return femaleBundlePromises.get(bundle).then((buffer) => {
+    const blob = new Blob([buffer.slice(item.ttsF.o, item.ttsF.o + item.ttsF.l)], { type: 'audio/mpeg' });
     const url = URL.createObjectURL(blob);
     femaleObjectUrls.set(key, url);
     return url;

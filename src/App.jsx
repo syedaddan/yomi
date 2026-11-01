@@ -175,7 +175,7 @@ export default function App() {
 
   return (
     <>
-      <div className={`wrap${prefs.romaji ? '' : ' no-rom'}${prefs.marks ? '' : ' no-mark'}`} id="app">
+      <div className={`wrap${page === 'drill' ? ' drill-layout' : ''}${prefs.romaji ? '' : ' no-rom'}${prefs.marks ? '' : ' no-mark'}`} id="app">
         <header className="top">
           <div className="top-in">
             <div className="brand">
@@ -185,6 +185,7 @@ export default function App() {
                 <span className="credits-tooltip-content">
                   <span><b>Word recordings:</b> <a href="https://github.com/tofugu/japanese-vocabulary-pronunciation-audio" target="_blank" rel="noopener noreferrer">WaniKani / Tofugu</a>, CC BY-SA 4.0.</span>
                   <span><b>Synthetic voice:</b> <a href="https://voicevox.hiroshiba.jp/" target="_blank" rel="noopener noreferrer">VOICEVOX:九州そら</a>.</span>
+                  <span><b>Kanji sentences and natural audio:</b> <a href="https://tatoeba.org/" target="_blank" rel="noopener noreferrer">Tatoeba</a>. Individual credits and license links are shown beside each example; CC BY-NC recordings are non-commercial.</span>
                   <span><b>Pitch accents:</b> <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener noreferrer">Kanjium</a>.</span>
                 </span>
               </InfoButton>
@@ -203,6 +204,7 @@ export default function App() {
               prefs={prefs}
               unlockedGroupIds={store.kanjiUnlockedGroups}
               onUnlockNext={unlockNextKanjiLesson}
+              notify={notify}
             />
           )}
           {page === 'add' && <AddWords customItems={store.customItems || []} onAdd={addCustomItem} onDelete={deleteCustomItem} />}

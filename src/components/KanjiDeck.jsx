@@ -1,10 +1,59 @@
 import React, { useMemo, useState } from 'react';
 import kanjiDeck from '../../out/kanji.json';
+import AudioButtons from './AudioButtons.jsx';
 import { romaji } from '../core.js';
 import { getUnlockedKanjiGroups } from '../storage.js';
 import { PitchLine } from './shared.jsx';
 
-function ReadingList({ label, readings }) {
+const LICENSE_URLS = {
+  'CC BY 2.0 FR': 'https://creativecommons.org/licenses/by/2.0/fr/',
+  'CC BY 4.0': 'https://creativecommons.org/licenses/by/4.0/',
+  'CC BY-NC 4.0': 'https://creativecommons.org/licenses/by-nc/4.0/',
+};
+
+function LicenseReference({ license }) {
+  if (!license) return null;
+  const url = LICENSE_URLS[license];
+  return url
+    ? <a href={url} target="_blank" rel="noopener noreferrer">{license}</a>
+    : license;
+}
+
+function SentenceAttribution({ sentence }) {
+  const { source, translationAttribution } = sentence;
+  const audioAttribution = sentence.audio?.audioAttribution;
+  if (!source && !translationAttribution && !audioAttribution) return null;
+
+  return (
+    <span className="kanji-credit-lines">
+      {source?.provider === 'Tatoeba' ? (
+        <span>
+          Sentence: <a href={sentence.sourceUrl} target="_blank" rel="noopener noreferrer">
+            {source.author || 'Tatoeba contributor'}
+          </a>{source.license && <> (<LicenseReference license={source.license} />)</>}
+        </span>
+      ) : source?.provider === 'Yomi' ? (
+        <span>Original practice sentence by Yomi.</span>
+      ) : null}
+      {translationAttribution && (
+        <span>
+          Translation: <a href={translationAttribution.url} target="_blank" rel="noopener noreferrer">
+            {translationAttribution.author || 'Tatoeba contributor'}
+          </a>{translationAttribution.license && <> (<LicenseReference license={translationAttribution.license} />)</>}
+        </span>
+      )}
+      {audioAttribution && (
+        <span>
+          Recording: <a href={audioAttribution.url} target="_blank" rel="noopener noreferrer">
+            {audioAttribution.author || 'Tatoeba contributor'}
+          </a>{audioAttribution.license && <> (<LicenseReference license={audioAttribution.license} />)</>}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function ReadingList({ label, readings, audio, showRomaji, notify }) {
   return (
     <div className="kanji-reading-group">
       <h4>{label}</h4>
@@ -13,7 +62,8 @@ function ReadingList({ label, readings }) {
           {readings.map((reading) => (
             <li key={reading}>
               <span lang="ja">{reading}</span>
-              <small>{romaji(reading.replace(/[.-]/g, ''))}</small>
+              {showRomaji && <small>{romaji(reading.replace(/[.-]/g, ''))}</small>}
+              <AudioButtons item={audio?.[reading]} label={reading} onError={notify} />
             </li>
           ))}
         </ul>
@@ -22,7 +72,7 @@ function ReadingList({ label, readings }) {
   );
 }
 
-function KanjiExample({ word, showFurigana, showRomaji, showMarks }) {
+function KanjiExample({ word, showFurigana, showRomaji, showMarks, notify }) {
   return (
     <article className="kanji-example">
       <div className="kanji-example-head">
@@ -38,6 +88,21 @@ function KanjiExample({ word, showFurigana, showRomaji, showMarks }) {
         showRomaji={showRomaji}
         showMarks={showMarks}
       />
+      {word.sentence && (
+        <div className="kanji-reibun">
+          <p lang="ja">{word.sentence.text}</p>
+          {word.sentence.translation && <small>{word.sentence.translation}</small>}
+          <AudioButtons
+            item={word.sentence.audio}
+            label={`example sentence for ${word.word}`}
+            onError={notify}
+            infoContent={<SentenceAttribution sentence={word.sentence} />}
+          />
+          {word.sentence.sourceUrl && (
+            <a className="kanji-sentence-source" href={word.sentence.sourceUrl} target="_blank" rel="noopener noreferrer">Tatoeba</a>
+          )}
+        </div>
+      )}
       {word.accents.length > 1 && (
         <p className="hint">Kanjium also lists pitch accent {word.accents.slice(1).map((accent) => `[${accent}]`).join(', ')}.</p>
       )}
@@ -45,7 +110,7 @@ function KanjiExample({ word, showFurigana, showRomaji, showMarks }) {
   );
 }
 
-export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext }) {
+export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext, notify }) {
   const unlocked = getUnlockedKanjiGroups(unlockedGroupIds, kanjiDeck.groups);
   const [query, setQuery] = useState('');
   const [index, setIndex] = useState(0);
@@ -154,7 +219,10 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext }) {
                 <div className="kanji-card-status">
                   <span>{index + 1} / {cards.length}</span>
                 </div>
-                <div className="kanji-prompt" lang="ja">{card.character}</div>
+                <div className="kanji-prompt-row">
+                  <div className="kanji-prompt" lang="ja">{card.character}</div>
+                  <AudioButtons item={card.audio?.character} label={card.character} onError={notify} />
+                </div>
                 <button type="button" className="btn primary" onClick={() => setRevealed((value) => !value)}>
                   {revealed ? 'Hide answer' : 'Show answer'}
                 </button>
@@ -162,8 +230,8 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext }) {
                   <div className="kanji-answer">
                     <p className="kanji-meaning">{card.meanings.join(' · ')}</p>
                     <div className="kanji-reading-grid">
-                      <ReadingList label="On'yomi" readings={card.on} />
-                      <ReadingList label="Kun'yomi" readings={card.kun} />
+                      <ReadingList label="On'yomi" readings={card.on} audio={card.audio?.readings} showRomaji={prefs.romaji} notify={notify} />
+                      <ReadingList label="Kun'yomi" readings={card.kun} audio={card.audio?.readings} showRomaji={prefs.romaji} notify={notify} />
                     </div>
                     <div className="kanji-examples-heading">
                       <h3>Examples</h3>
@@ -176,6 +244,7 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext }) {
                           showFurigana={prefs.furigana}
                           showRomaji={prefs.romaji}
                           showMarks={prefs.marks}
+                          notify={notify}
                         />
                       ))}
                     </div>

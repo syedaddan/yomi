@@ -30,7 +30,7 @@ Human clips are preferred for playback when available. Every custom word also ge
   - Keys: Space/Enter reveal, P play, 1/2/3 rate, ←/→ back/forward, X (sprint miss).
 - **Phrase pacer section**: pick a phrase, set speed (mora/s), highlight walks the moras. "Speak along" plays a female VOICEVOX clip and the highlight is driven by `audio.currentTime` against exact per-mora onset times (so voice and highlight cannot drift). Previous / Next (B / N, ← →).
 - **Add words section**: add Hiragana or Katakana words to a browser-local deck with meaning, theme, optional dictionary pitch, source link, and optional human audio. Search for human audio first; generating a female VOICEVOX clip is always required. Difficult starter words include コロナウイルス, きょうりゅう, and きゅうきゅうしゃ.
-- **Kanji section**: study 49 ordered lesson groups containing 272 unique characters parsed from the shared filenames, plus a final group preserving 立 and 耳 from the previous deck. The first group (一 through 十) starts unlocked; unlock later groups sequentially. Unlock state is saved in this browser. Reveal KANJIDIC2 on/kun readings and example compounds with Kanjium pitch accents, search within the active group, and toggle furigana.
+- **Kanji section**: study ordered lesson groups with KANJIDIC2 readings and Kanjium-pitched example compounds. Each kanji, listed reading, and example sentence has VOICEVOX audio; reusable Tatoeba sentence recordings play first where available. Sentence text, English translation, and per-item attribution are shown with each example.
 - **Look-alikes section**: 20-item quizzes over confusable sets.
 - **Progress section**: per-session and saved stats (see the section).
 - Light/dark theme (follows OS), phone-friendly layout, keyboard friendly. Romaji and pitch-mark information buttons remain fully visible beside their controls in the bottom dock; the Yomi mark uses the app's blue accent.
@@ -53,7 +53,7 @@ yomi/
       Pacer.jsx          phrase selection and synchronized playback
       AddWords.jsx       browser-local word form and starter vocabulary
       StudyTabs.jsx      look-alikes and progress
-      KanjiDeck.jsx      N5 kanji cards, readings, furigana, and pitch-marked examples
+      KanjiDeck.jsx      N5 kanji cards, readings, furigana, and audio examples
       SettingsBar.jsx    fixed bottom settings dock and expandable controls
       shared.jsx         pitch display, navigation, and shared controls
     core.js              pure mora, pitch, and romaji helpers
@@ -74,6 +74,8 @@ yomi/
     vv_lib.py         VOICEVOX helpers (build accent phrases, render, mora timings, F0 tracker)
     gen_common.py     shared bits of the generators
     gen_female.py     female VOICEVOX bundle out/audio/female_voice.mp3 + ttsF/tlF/tendF
+    import_tatoeba.py imports cited sentences and explicitly reusable natural recordings
+    gen_kanji.py     generates missing Kanji, reading, and sentence audio
     vv_eval2.py, vv_eval3.py, final_qa.py   female voice evaluation / pitch QA scripts
   tests/
     smoke.py, pace_test.py, clip_test.py, nav_test.py    Playwright (Chromium) tests
@@ -94,7 +96,8 @@ yomi/
 - To create a custom word, search for a human recording first, provide its source if found, then generate a female VOICEVOX clip. The page requires the VOICEVOX Engine at `127.0.0.1:50021` with browser CORS enabled. If no human recording is found, the female clip is still generated and used.
 - Deck, mode, script, and audio choices use compact pressed-state buttons rather than radio controls. Voice and audio details are available from keyboard-accessible `i` information buttons.
 - `out/data.json` is imported into the app at build time. Before starting Vite or building, an npm pre-script copies `out/audio/` to the ignored `public/audio/`; Vite then serves and bundles those static audio files.
-- The Kanji section is a separate N5-focused study deck and does not change kana drill selection. Its curated character set is paired with KANJIDIC2 readings/meanings and Kanjium example-word pitch accents. JLPT does not publish an official kanji list.
+- The Kanji section is a separate study deck and does not change kana drill selection. Its curated character set is paired with KANJIDIC2 readings/meanings, Kanjium example-word pitch accents, and sentence/audio attribution.
+- Kanji sentences and translations come from Tatoeba when available; the two uncovered examples use original practice sentences. Natural audio is included only when the recording is explicitly CC BY 4.0 or CC BY-NC 4.0. All other kanji, reading, and sentence audio is synthesized locally with VOICEVOX.
 - `data.json` schema (male VOICEVOX clips and fields are removed):
   ```
   hira: [{kana, en, theme, accent, audio, alt, ttsF}]
@@ -154,7 +157,7 @@ Optional browser tests use Playwright. Start `npm run dev` in one terminal, inst
 
 ## 7. Regenerating data and audio (only if you change decks)
 
-Requirements: Python 3.10+, `numpy`, `soundfile`, `ffmpeg` on PATH, `py7zr` (to unpack the engine), plus:
+Requirements: Python 3.10+, `numpy`, `soundfile`, and either FFmpeg on PATH or `imageio-ffmpeg`; `py7zr` is only needed to unpack the VOICEVOX Engine. Tatoeba import uses the Python standard library.
 - Tofugu repo: `GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/tofugu/japanese-vocabulary-pronunciation-audio` (mp3s are in `lib/mp3/`, named `漢字【かな】.mp3`).
 - Kanjium `accents.txt` from https://github.com/mifunetoshiro/kanjium (`data/source_files/raw/accents.txt`).
 - VOICEVOX engine 0.24.1 (CPU is fine), GitHub release asset `voicevox_engine-linux-cpu-*` / the Windows or macOS build. Run it so `http://127.0.0.1:50021/version` answers. The female synthetic voice is 九州そら (style 16).
@@ -175,7 +178,7 @@ python3 build/kanji_deck.py <kanjidic2.xml.gz> <accents.txt> <jukugo.txt> out/ka
 ```
 The ordered groups and original presentation filenames are recorded in `build/kanji_groups.json`. The first filename names the range 1–10, represented as 一 through 十. The filenames identify 272 unique characters; slide contents were not inspected, so characters shown only inside slides are not included. The final extra group preserves 立 and 耳 from the earlier deck.
 
-Curated deck audio is generated into `out/audio/female_voice.mp3` before building and ships with the static site; the hosted site does not need a running VOICEVOX engine for its built-in words. To add personal words from the site, run the local VOICEVOX Engine with browser CORS enabled (for example, `run.exe --cors_policy_mode all` on Windows), then open the **Add words** section. Those words and recordings stay in that browser.
+Run `python3 tts/import_tatoeba.py` to add sourced sentences and translations with their Tatoeba credits, plus natural recordings explicitly licensed CC BY 4.0 or CC BY-NC 4.0. The deck stores per-sentence, translation, and audio credits; CC BY-NC recordings are for non-commercial use only. Then run `python3 tts/gen_kanji.py` with the local VOICEVOX Engine available at `127.0.0.1:50021` to synthesize every kanji, reading, and sentence. Install `imageio-ffmpeg` if FFmpeg is not on PATH. The generated `out/audio/kanji_voice.mp3` and Tatoeba recordings ship with the static site. To add personal words from the site, run the local VOICEVOX Engine with browser CORS enabled (for example, `run.exe --cors_policy_mode all` on Windows), then open the **Add words** section. Those words and recordings stay in that browser.
 
 ## 8. Known limitations
 
@@ -197,6 +200,8 @@ The prioritized project roadmap, including deck expansion and user-added vocabul
 - Kanji readings and meanings: KANJIDIC2, © Electronic Dictionary Research and Development Group (EDRDG), CC BY-SA 4.0. [Source](https://www.edrdg.org/kanjidic/kanjidic2.xml.gz) · [licence](https://www.edrdg.org/edrdg/licence.html).
 - Example vocabulary and pitch accents: Kanjium, including additions and modifications provided by Uros O., CC BY-SA 4.0. [Source](https://github.com/mifunetoshiro/kanjium) · [licence](https://creativecommons.org/licenses/by-sa/4.0/).
 - Voice: VOICEVOX:九州そら. VOICEVOX's terms require crediting the character. Check the character's terms before commercial use.
+- Kanji sentences and translations: Tatoeba contributors, [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/); each source and contributor is linked from the example's information button.
+- Natural Kanji sentence recordings: Tatoeba contributors, per-record [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) or [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Audio contributor, license, and attribution link are stored with each recording. CC BY-NC recordings may only be used non-commercially.
 - Page code: yours to license.
 
 ## 11. Notes for contributors
