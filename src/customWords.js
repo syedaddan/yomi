@@ -15,8 +15,6 @@ export function createCustomWord({ id, deck, kana, meaning, theme, accent, sourc
   }
   if (!english) throw new Error('Enter an English meaning.');
   if (!wordTheme) throw new Error('Choose or enter a theme.');
-  if (!femaleAudioId) throw new Error('A generated female VOICEVOX recording is required.');
-
   const wordMoras = moras(word);
   const pitch = accent === '' || accent == null ? null : Number(accent);
   if (pitch !== null && (!Number.isInteger(pitch) || pitch < 0 || pitch > wordMoras.length)) {
@@ -44,7 +42,7 @@ export function createCustomWord({ id, deck, kana, meaning, theme, accent, sourc
     sourceUrl: sourceUrl || '',
     humanAudioUrl: audioUrl || '',
     humanAudioId: humanAudioId || '',
-    femaleAudioId,
+    femaleAudioId: femaleAudioId || '',
     audio: null,
     alt: null,
     ttsF: null,

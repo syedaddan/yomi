@@ -25,17 +25,18 @@ test('creates a normalized custom Hiragana word with a verified accent', () => {
   assert.equal(word.femaleAudioId, 'custom:test:female');
 });
 
-test('accepts Katakana and unknown pitch while requiring generated audio', () => {
+test('accepts Katakana and unknown pitch without requiring a generated audio file', () => {
   const word = createCustomWord({
     ...required,
     deck: 'kata',
     kana: 'コロナウイルス',
     accent: '',
     audioUrl: 'https://example.com/recording.mp3',
+    femaleAudioId: '',
   });
   assert.equal(word.accent, null);
   assert.equal(word.humanAudioUrl, 'https://example.com/recording.mp3');
-  assert.throws(() => createCustomWord({ ...required, femaleAudioId: '' }), /female VOICEVOX/);
+  assert.equal(word.femaleAudioId, '');
 });
 
 test('rejects the wrong script, invalid accent, and insecure audio links', () => {

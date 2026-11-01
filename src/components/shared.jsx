@@ -35,10 +35,10 @@ export function VoiceButtons({ value, onChange, attribute = 'data-voice' }) {
     <div className="choice-field">
       <div className="choice-group compact" role="group" aria-label="Voice">
         <button className="choice-button" {...{ [attribute]: 'recording' }} aria-pressed={value === 'recording'} onClick={() => onChange('recording')}>Recording</button>
-        <button className="choice-button" {...{ [attribute]: 'female' }} aria-pressed={value !== 'recording'} onClick={() => onChange('female')}>Female VOICEVOX</button>
+        <button className="choice-button" {...{ [attribute]: 'female' }} aria-pressed={value !== 'recording'} onClick={() => onChange('female')}>Synthetic voice</button>
       </div>
       <InfoButton label="Voice information">
-        Recording plays this word's curated human clip. Female VOICEVOX clips use 九州そら; their pitch may differ from dictionary marks. Some alternate recordings use a Kansai accent.
+        Kansai recordings play first when available. Other voice uses the selected recording or synthetic voice: bundled female VOICEVOX for built-in items, or your browser's Japanese voice for custom words.
       </InfoButton>
     </div>
   );

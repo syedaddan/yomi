@@ -71,7 +71,7 @@ export function progressFromRows(rows) {
     sourceUrl: row.source_url,
     humanAudioUrl: row.human_audio_url,
     humanAudioId: row.human_audio_id,
-    femaleAudioId: row.female_audio_id,
+    femaleAudioId: row.female_audio_id || '',
     audio: null,
     alt: null,
     ttsF: null,

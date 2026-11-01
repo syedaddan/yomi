@@ -80,8 +80,21 @@ test('reconstructs the app store from normalized progress and custom-word rows',
   assert.equal(store.conf['pair:あ>お'], 2);
   assert.deepEqual(store.sprints, [{ t: 10, key: 'hira', read: 8, miss: 1, mpm: 12 }]);
   assert.equal(store.customItems[0].kana, 'あい');
+  assert.equal(store.customItems[0].femaleAudioId, 'voice-one');
   assert.deepEqual(store.kanjiProgress['一'], {
     groupId: 'lesson-01', views: 2, reveals: 1, n: 1, got: 0, slow: 1, miss: 0,
     lastReviewedAt: '2026-11-02T00:00:00Z',
+  });
+
+  test('supports custom word rows that use browser speech instead of stored audio', () => {
+    const store = progressFromRows([
+      null, [], [], [], [],
+      [{
+        item_id: 'custom:browser-speech', deck: 'hira', kana: 'あい', meaning: 'love', theme: 'Life',
+        accent: null, source_url: '', human_audio_url: '', human_audio_id: '', female_audio_id: null,
+      }],
+      [],
+    ]);
+    assert.equal(store.customItems[0].femaleAudioId, '');
   });
 });

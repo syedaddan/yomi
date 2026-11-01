@@ -3,7 +3,7 @@
 A small React Japanese **reading trainer** for hiragana, katakana, and beginner kanji.
 Built for a learner who is preparing for class reading tests and wants to stop decoding character by character.
 
-The app is a small React site built with Vite and can be hosted on GitHub Pages. Local study remains available without an account; optional Supabase accounts sync progress and custom-word audio between devices. The Add words page uses a local VOICEVOX Engine on your own computer when you create a word. The illustrated Yomi mark is also used as the site favicon; audio and data credits are available from the information button beside the logo. Pages use extensionless paths, with Drill at the site root.
+The app is a small React site built with Vite and can be hosted on GitHub Pages. Local study remains available without an account; optional Supabase accounts sync progress, custom words, and user-uploaded audio between devices. Add words uses the browser's built-in Japanese speech synthesis at playback time, so it needs no local engine or generated audio file. The illustrated Yomi mark is also used as the site favicon; audio and data credits are available from the information button beside the logo. Pages use extensionless paths, with Drill at the site root.
 
 ---
 
@@ -14,22 +14,22 @@ The owner's goals (from the Claude Project "Japanese Reading"):
 | Goal | How the tool addresses it |
 |---|---|
 | **Speed** (read words and whole phrases without stalling on characters) | Drill with timed reads, Flash mode (word hides after N ms), 60-second Sprint (mora/min), Phrase pacer (highlight moves at a set mora/s), weighted shuffle that repeats slow and missed cards |
-| **Accuracy** (pronunciation + intonation) | Every word shows pitch-accent marks (red bar above = high, blue bar below = low, ↘ = drop, ↗ = question). Human recordings are preferred where available; female VOICEVOX is the synthetic voice. |
+| **Accuracy** (pronunciation + intonation) | Every word shows pitch-accent marks (red bar above = high, blue bar below = low, ↘ = drop, ↗ = question). Kansai clips take priority when available; built-in deck items use bundled female VOICEVOX, and custom words use the browser's Japanese speech voice when no recording exists. |
 | **Correctness** (confusable characters) | "Look-alikes" page: シ/ツ, ソ/ン, ぬ/め, ね/れ/わ, etc., with quizzes and tips. Progress page tracks per-item misses |
 | **Kanji** | Study ordered lesson groups with KANJIDIC2 on/kun readings and Kanjium-pitched example words; unlock groups one at a time |
 
-Human clips are preferred for playback when available. Every custom word also gets a female VOICEVOX clip, even when a human recording is found.
+Curated human recordings are preferred when available. Custom words use browser speech on devices without a saved human recording; they do not generate or upload a synthetic audio file.
 
 ## 2. Features (current state)
 
-- **Drill section**: mix decks freely (Hiragana 193, Katakana 169, Phrases 40, plus words added in this browser), filter by themes (Home, Food, People, Places, Time, Nature, Body, IT & Work, Verbs, Adjectives, Tech, Food & Drink, Travel, Clothes, School & Fun, Look-alikes, Greetings, Class & Daily ...).
+- **Drill section**: mix decks freely (Hiragana 193, Katakana 169, Phrases 40, plus personal words), filter by themes (Home, Food, People, Places, Time, Nature, Body, IT & Work, Verbs, Adjectives, Tech, Food & Drink, Travel, Clothes, School & Fun, Look-alikes, Greetings, Class & Daily ...).
   - Modes: Read (time measured to reveal), Flash (hidden after N ms), Sprint (60 s).
-  - Reveal shows pitch marks, romaji, meaning, audio controls (human recording / female VOICEVOX, Play, Slow, "Other recording" clip where present).
+  - Reveal shows pitch marks, romaji, meaning, and audio controls. Kansai audio plays first when available; the other voice uses the selected curated Tokyo recording or synthetic voice.
   - Rate: Missed / Slow / Got it (keys 1/2/3). Progress persists locally and syncs to your account when signed in.
   - **Back / Forward** (buttons and ← → keys). History stack of the last 100 cards; revisited cards show revealed and are never double-counted. Forward on a fresh card = Skip (no rating recorded).
   - Keys: Space/Enter reveal, P play, 1/2/3 rate, ←/→ back/forward, X (sprint miss).
 - **Phrase pacer section**: pick a phrase, set speed (mora/s), highlight walks the moras. "Speak along" plays a female VOICEVOX clip and the highlight is driven by `audio.currentTime` against exact per-mora onset times (so voice and highlight cannot drift). Previous / Next (B / N, ← →).
-- **Add words section**: add Hiragana or Katakana words to a personal deck with meaning, theme, optional dictionary pitch, source link, and optional human audio. Signed-in users sync words and recordings; words join their existing Kana drill deck. Search for human audio first; generating a female VOICEVOX clip is always required. Difficult starter words include コロナウイルス, きょうりゅう, and きゅうきゅうしゃ.
+- **Add words section**: add Hiragana or Katakana words to a personal deck with meaning, theme, optional dictionary pitch, source link, and optional human audio. Signed-in users sync words and uploaded recordings; words join their existing Kana drill deck and are organized by deck on the Add words page. Custom words without recordings use the browser's Japanese speech voice at playback time. Voice availability and quality vary by device/browser. Difficult starter words include コロナウイルス, きょうりゅう, and きゅうきゅうしゃ.
 - **Decks admin tab**: the admin can add, edit, or remove original Hiragana, Katakana, and phrase items for everyone. Changes are stored as shared overrides; regular users cannot access the tab or write to the catalog.
 - **Kanji section**: study ordered lesson groups with KANJIDIC2 readings and Kanjium-pitched example compounds. Learners can reveal and rate each character; the Progress page tracks views and ratings. Only the admin can unlock lessons globally. Each kanji, listed reading, and example sentence has VOICEVOX audio; reusable Tatoeba sentence recordings play first where available. Sentence text, English translation, and per-item attribution are shown with each example.
 - **Account page**: manage a private profile and picture, set a password, or delete the account and its cloud data.
@@ -63,7 +63,7 @@ yomi/
     storage.js           local preferences and progress
     customWords.js       custom word validation and normalization
     customAudio.js       IndexedDB storage for custom audio
-    voicevox.js          female VOICEVOX Engine synthesis for custom words
+    voicevox.js          local VOICEVOX synthesis helpers
     audio.js             human/female audio playback and female voice bundle
     styles.css           app styles
   build/
@@ -91,11 +91,11 @@ yomi/
 
 ## 4. Architecture and data
 
-- **React** renders the app and keeps interface state in components. Sections use client-side extensionless paths (`/`, `/pacer`, `/alike`, `/add`, `/progress`, `/kanji`), so navigation switches the active React view without reloading the document or exposing `.html` routes. Browser back/forward works normally, and the GitHub Pages fallback supports direct visits and refreshes on section paths.
+- **React** renders the app and keeps interface state in components. Sections use client-side extensionless paths (`/`, `/pacer`, `/alike`, `/add`, `/decks`, `/progress`, `/kanji`, `/account`), so navigation switches the active React view without reloading the document or exposing `.html` routes. Browser back/forward works normally, and the GitHub Pages fallback supports direct visits and refreshes on section paths.
 - **Vite** is the local development server and production builder; it bundles the React code into regular static HTML, CSS, and JavaScript. GitHub Pages serves the single app entry; Vite does not run on the hosted site.
-- The compact top bar holds the centered Yomi brand and section navigation. A fixed two-row bottom settings dock is available throughout the app: display toggles and Drill reading mode are on the first row, and deck/theme/study controls are on the second. Large option lists open into small panels; selected Drill themes stay visible as removable chips with a selected/available count. Each row has its own reset action; resets restore preferences without deleting study progress.
+- The compact top bar holds the centered Yomi brand and section navigation. The fixed bottom settings dock provides display toggles and, where useful, a second row of deck/theme/study controls. Kanji shows only its display row. Large option lists open into small panels; selected Drill themes stay visible as removable chips with a selected/available count. Resets restore preferences without deleting study progress.
 - Without an account, progress and custom words remain local to the browser. After sign-in, progress syncs to a user-owned Supabase row and custom audio to private user storage; local copies are retained.
-- To create a custom word, search for a human recording first, provide its source if found, then generate a female VOICEVOX clip. The page requires the VOICEVOX Engine at `127.0.0.1:50021` with browser CORS enabled. If no human recording is found, the female clip is still generated and used.
+- To create a custom word, search for a human recording first and provide its source if found. Optional human audio can be attached. Without a recording, playback uses the browser's built-in Japanese speech synthesis; no local service or TTS audio upload is required.
 - Deck, mode, script, and audio choices use compact pressed-state buttons rather than radio controls. Voice and audio details are available from keyboard-accessible `i` information buttons.
 - `out/data.json` is imported into the app at build time. Before starting Vite or building, an npm pre-script copies `out/audio/` to the ignored `public/audio/`; Vite then serves and bundles those static audio files.
 - The Kanji section is a separate study deck and does not change kana drill selection. Its curated character set is paired with KANJIDIC2 readings/meanings, Kanjium example-word pitch accents, and sentence/audio attribution.
@@ -107,13 +107,13 @@ yomi/
   phr:  [{theme, chunks:[{w, p, a, src}], en, audio, alt, q, ttsF, tlF, tendF}]
   ```
   - `accent`: Kanjium string such as `0`, `2`, `(名)2,(感)4,0`; custom words may have unknown pitch. `accentList()` takes the numbers; the first is shown.
-  - `audio`: human recording when available. `alt`: alternate human recording (extra button only).
+  - `audio`: curated recording when available. `alt`: Kansai-accent recording; it takes priority on Play when present. "Other voice" plays the selected non-Kansai option.
   - `ttsF = {o, l}`: byte offset and length of this item's clip inside `audio/female_voice.mp3`.
   - `tlF/tendF`: per-mora onset seconds and end of last mora for the female VOICEVOX pacer clip.
   - Phrase `chunks`: `w` word, `p` particles/ending glued after it, `a` accent (0 = flat, null = none), `src` `dict` or `rule`.
 - **Mora**: one beat. Small ゃゅょ and ぁぃぅぇぉ join the previous kana; っ, ん, ー each count as one.
 - **Pitch model** (`pitchPattern(n, a)`): a=0 → L H H…; a=1 → H L L…; a=n → L H…H (odaka); otherwise L H…H L…. Particles are high after a flat word, low otherwise.
-- **Audio priority** in the drill: Female VOICEVOX uses the female bundle; Recording uses a human clip when available and otherwise the female bundle. A device voice is only a last resort if a clip cannot be loaded.
+- **Audio priority** in the drill: Kansai recording first when present; otherwise the selected curated recording or female VOICEVOX. Custom words without saved audio use the browser's built-in Japanese speech synthesis.
 - **Female bundle**: one MP3 fetched lazily on first use and sliced into per-item Blobs. No male VOICEVOX clips are shipped or used.
 - **Pacer clip sync**: the female VOICEVOX clip's per-mora onset timeline drives the highlight from `audio.currentTime`; playback rate is clamped to 0.5-2.
 - Preferences and progress are retained locally for local-first use and synced to separate per-user Supabase tables when signed in.
@@ -157,7 +157,7 @@ To publish with GitHub Pages, push to the `main` or `master` branch. The workflo
 
 ### Optional Supabase accounts and sync
 
-1. Create a Supabase project and run the migrations in order in its SQL editor: [`202611020001_user_data.sql`](./supabase/migrations/202611020001_user_data.sql), [`202611020002_profiles_and_structured_progress.sql`](./supabase/migrations/202611020002_profiles_and_structured_progress.sql), then [`202611020003_admin_deck_catalog.sql`](./supabase/migrations/202611020003_admin_deck_catalog.sql). Migration 002 converts existing JSON progress into readable per-user tables and assigns admin access only to `syedaddan@gmail.com`; migration 003 enables shared admin editing of the original decks. If you have already run migrations 001 and 002, run only 003; do not rerun earlier migrations.
+1. Create a Supabase project and run the migrations in order in its SQL editor: [`202611020001_user_data.sql`](./supabase/migrations/202611020001_user_data.sql), [`202611020002_profiles_and_structured_progress.sql`](./supabase/migrations/202611020002_profiles_and_structured_progress.sql), [`202611020003_admin_deck_catalog.sql`](./supabase/migrations/202611020003_admin_deck_catalog.sql), and [`202611020004_browser_speech_custom_words.sql`](./supabase/migrations/202611020004_browser_speech_custom_words.sql). Migration 002 converts existing JSON progress into readable per-user tables and assigns admin access only to the configured admin account; migration 003 enables shared admin editing of the original decks; migration 004 allows custom words to rely on browser speech instead of stored generated audio. Apply only migrations that have not already run; do not rerun earlier migrations.
 2. In Supabase Authentication, enable Google and email OTP (magic links). Add the local and deployed Yomi URLs to the allowed redirect URLs. Configure the Google OAuth client in Supabase; no Google client secret belongs in this repository.
 3. Copy `.env.example` to `.env.local` for local development and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` using the project URL and public anon/publishable key.
 4. Add those same values as GitHub Actions repository variables named `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` so the Pages build enables accounts. These browser values are public; database and storage access is protected by row-level security.
@@ -169,7 +169,7 @@ Optional browser tests use Playwright. Start `npm run dev` in one terminal, inst
 
 ## 7. Regenerating data and audio (only if you change decks)
 
-Requirements: Python 3.10+, `numpy`, `soundfile`, and either FFmpeg on PATH or `imageio-ffmpeg`; `py7zr` is only needed to unpack the VOICEVOX Engine. Tatoeba import uses the Python standard library.
+Requirements: Python 3.10+, `numpy`, `soundfile`, and either FFmpeg on PATH or `imageio-ffmpeg`; `py7zr` is only needed to unpack the VOICEVOX Engine. Tatoeba import uses the Python standard library. The Add words page itself does not require the local VOICEVOX Engine.
 - Tofugu repo: `GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/tofugu/japanese-vocabulary-pronunciation-audio` (mp3s are in `lib/mp3/`, named `漢字【かな】.mp3`).
 - Kanjium `accents.txt` from https://github.com/mifunetoshiro/kanjium (`data/source_files/raw/accents.txt`).
 - VOICEVOX engine 0.24.1 (CPU is fine), GitHub release asset `voicevox_engine-linux-cpu-*` / the Windows or macOS build. Run it so `http://127.0.0.1:50021/version` answers. The female synthetic voice is 九州そら (style 16).
@@ -190,17 +190,17 @@ python3 build/kanji_deck.py <kanjidic2.xml.gz> <accents.txt> <jukugo.txt> out/ka
 ```
 The ordered groups and original presentation filenames are recorded in `build/kanji_groups.json`. The first filename names the range 1–10, represented as 一 through 十. The filenames identify 272 unique characters; slide contents were not inspected, so characters shown only inside slides are not included. The final extra group preserves 立 and 耳 from the earlier deck.
 
-Run `python3 tts/import_tatoeba.py` to add sourced sentences and translations with their Tatoeba credits, plus natural recordings explicitly licensed CC BY 4.0 or CC BY-NC 4.0. The deck stores per-sentence, translation, and audio credits; CC BY-NC recordings are for non-commercial use only. Then run `python3 tts/gen_kanji.py` with the local VOICEVOX Engine available at `127.0.0.1:50021` to synthesize every kanji, reading, and sentence. Install `imageio-ffmpeg` if FFmpeg is not on PATH. The generated `out/audio/kanji_voice.mp3` and Tatoeba recordings ship with the static site. To add personal words from the site, run the local VOICEVOX Engine with browser CORS enabled (for example, `run.exe --cors_policy_mode all` on Windows), then open the **Add words** section. Without an account, personal words and recordings stay in that browser; signed-in users can sync them to their account.
+Run `python3 tts/import_tatoeba.py` to add sourced sentences and translations with their Tatoeba credits, plus natural recordings explicitly licensed CC BY 4.0 or CC BY-NC 4.0. The deck stores per-sentence, translation, and audio credits; CC BY-NC recordings are for non-commercial use only. Then run `python3 tts/gen_kanji.py` with the local VOICEVOX Engine available at `127.0.0.1:50021` to synthesize every kanji, reading, and sentence. Install `imageio-ffmpeg` if FFmpeg is not on PATH. The generated `out/audio/kanji_voice.mp3` and Tatoeba recordings ship with the static site. Add personal words through the **Add words** section; the browser provides Japanese speech when no human recording exists. Without an account, personal words and uploaded recordings stay in that browser; signed-in users can sync them to their account.
 
 ## 8. Known limitations
 
 - Pitch is not verified by a human. ~80% agreement with the dictionary for the synthetic voices, ~73% for the real recordings (speaker accent differs from the dictionary at times). Dictionary accents themselves vary by dialect and by compound/phrase context.
 - Within phrases each chunk uses its own dictionary pitch; real speech shifts pitch across chunks. A visible note says so.
-- 64 hiragana words and 36 of 40 phrases have no real Tokyo-accent recording. Katakana has none. These use VOICEVOX.
+- 64 hiragana words and 36 of 40 phrases have no real Tokyo-accent recording. Katakana has none. These use the bundled VOICEVOX voice. Browser-based speech for custom words varies by device.
 - No microphone / pronunciation scoring yet (the "accuracy" goal is only listening + marks so far).
 - Kanji practice is separate from the kana drill. Lesson availability is global and admin-controlled; per-character views and ratings sync for signed-in users. The filename-derived list has 272 unique characters (plus two preserved from the previous deck), fewer than the approximately 450 estimated from the full slide contents; characters not present in filenames are not included.
 - Without signing in, progress and preferences stay in this browser's `localStorage`; account sync requires configuring Supabase as described above.
-- The GitHub Pages study site needs an internet connection for Google Fonts and the first lazy load of the bundled female voice. Adding words also requires a locally running VOICEVOX Engine.
+- The GitHub Pages study site needs an internet connection for Google Fonts and the first lazy load of the bundled female voice. Browser speech voice availability and quality depend on the user's device and browser.
 
 ## 9. Roadmap
 

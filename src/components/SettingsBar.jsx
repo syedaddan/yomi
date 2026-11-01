@@ -190,7 +190,7 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
             ><span aria-hidden="true">↺</span> Reset all</button>
           </div>
         )}
-        {(showSettingsControls || page === 'kanji') && <div className="settings-controls-row">
+        {showSettingsControls && <div className="settings-controls-row">
             {showSettingsControls && <div className="settings-scroll">
               {page === 'drill' && (
             <>

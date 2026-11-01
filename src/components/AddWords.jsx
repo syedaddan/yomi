@@ -3,7 +3,6 @@ import { moras } from '../core.js';
 import { DECK_NAMES, ITEMS } from '../data.js';
 import { createCustomWord } from '../customWords.js';
 import { deleteCustomAudio, saveCustomAudio } from '../customAudio.js';
-import { synthesizeFemaleWord } from '../voicevox.js';
 
 const MAX_HUMAN_AUDIO_BYTES = 10 * 1024 * 1024;
 const SUGGESTED_WORDS = [
@@ -74,8 +73,7 @@ export default function AddWords({ customItems, onAdd, onDelete, items = ITEMS }
     const form = event.currentTarget;
     setBusy(true);
     setError('');
-    setMessage('Generating the required female VOICEVOX recording…');
-    let femaleAudioId = '';
+    setMessage('Saving your word…');
     let humanAudioId = '';
     try {
       if (!searched) throw new Error('Use the human-recording search before adding this word.');
@@ -105,13 +103,10 @@ export default function AddWords({ customItems, onAdd, onDelete, items = ITEMS }
         accent,
         sourceUrl: searchResult === 'found' ? sourceUrl.trim() : '',
         audioUrl: audioUrl.trim(),
-        femaleAudioId: `${id}:female`,
+        femaleAudioId: '',
         humanAudioId: humanFile ? `${id}:human` : '',
       });
 
-      const femaleAudio = await synthesizeFemaleWord(record.kana, record.accent);
-      femaleAudioId = record.femaleAudioId;
-      await saveCustomAudio(femaleAudioId, femaleAudio);
       if (humanFile) {
         humanAudioId = record.humanAudioId;
         await saveCustomAudio(humanAudioId, humanFile);
@@ -127,10 +122,10 @@ export default function AddWords({ customItems, onAdd, onDelete, items = ITEMS }
       setAudioUrl('');
       setHumanFile(null);
       form.reset();
-      setMessage(`${record.kana} added with female VOICEVOX audio.`);
+      setMessage(`${record.kana} added. Speech uses your browser's Japanese voice.`);
     } catch (caught) {
       const problem = caught instanceof Error ? caught.message : 'The word could not be saved.';
-      const savedAudioIds = [femaleAudioId, humanAudioId].filter(Boolean);
+      const savedAudioIds = [humanAudioId].filter(Boolean);
       if (!savedAudioIds.length) {
         setError(problem);
       } else {
@@ -244,10 +239,10 @@ export default function AddWords({ customItems, onAdd, onDelete, items = ITEMS }
           </details>
 
           <details className="voicevox-info">
-            <summary>Female audio is generated automatically</summary>
-            <p>Requires VOICEVOX Engine running locally at 127.0.0.1:50021 with browser CORS enabled.</p>
+            <summary>Speech is built into your browser</summary>
+            <p>Custom words use your device's Japanese speech voice when played. Voice availability and quality vary by browser and device; no local engine or generated audio file is needed.</p>
           </details>
-          <button className="btn primary add-word-submit" type="submit" disabled={busy}>{busy ? 'Generating…' : 'Generate audio & add word'}</button>
+          <button className="btn primary add-word-submit" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Add word'}</button>
           {error && <p className="form-message error" role="alert">{error}</p>}
           {message && <p className="form-message" role="status">{message}</p>}
         </form>

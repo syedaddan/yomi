@@ -296,16 +296,22 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
                       <div className="audio-row">
                         <button className="btn primary" data-play="main" onClick={() => playItem(item, { voice: hasCuratedRecording ? prefs.voice : 'female', slow, onError: notify })}>▶ Play <kbd>P</kbd></button>
                         <button className="btn" aria-pressed={slow} onClick={() => setSlow((value) => !value)}>{slow ? 'Slow: on' : 'Slow: off'}</button>
-                        {item.alt && <button className="btn" onClick={() => playItem(item, { voice: prefs.voice, alternate: true, slow, onError: notify })}>▶ Other recording</button>}
+                        {item.alt && <button className="btn" onClick={() => playItem(item, { voice: prefs.voice, alternate: true, slow, onError: notify })}>▶ Other voice</button>}
                       </div>
                       <InfoButton label="About these recordings">
-                        {prefs.voice === 'recording' && (item.audio || item.humanAudioId || item.humanAudioUrl)
+                        {item.alt
+                          ? 'Play uses the Kansai recording first. Other voice uses the selected curated or synthetic voice.'
+                          : prefs.voice === 'recording' && (item.audio || item.humanAudioId || item.humanAudioUrl)
                           ? 'This word has a human recording. Its pitch may differ from the dictionary marks.'
                           : item.chunks.some((chunk) => chunk.a == null)
-                            ? 'Female synthetic voice (VOICEVOX:九州そら). No dictionary pitch is available for this word.'
-                            : 'Female synthetic voice (VOICEVOX:九州そら). Its pitch follows the dictionary accent; trust the marks if they disagree.'}
+                            ? (item.custom
+                              ? 'This custom word uses the Japanese voice provided by your browser/device. No dictionary pitch is available for this word.'
+                              : 'Female synthetic voice (VOICEVOX:九州そら). No dictionary pitch is available for this word.')
+                            : (item.custom
+                              ? 'This custom word uses the Japanese voice provided by your browser/device. Voice availability and quality vary.'
+                              : 'Female synthetic voice (VOICEVOX:九州そら). Its pitch follows the dictionary accent; trust the marks if they disagree.')}
                         {item.sourceUrl && <> <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">Human recording source.</a></>}
-                        {item.alt && ' The other recording is a Kansai-accent speaker, so pitch can differ from the marks.'}
+                        {item.alt && ' The primary Play button prefers the Kansai recording. Other voice uses your selected Tokyo recording or synthetic/browser voice.'}
                       </InfoButton>
                     </div>
                     <p className="note">
