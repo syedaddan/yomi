@@ -11,8 +11,9 @@ Priorities are ordered. The first item remains the active priority; completed wo
 
 ## Existing roadmap
 
-- [ ] **Record-and-compare**: capture microphone audio, show the learner's pitch contour against the reference, and provide a mora-level score.
 - [ ] **Kanji deck** (JLPT N5 first): add furigana controls, on/kun readings, and compound words with pitch; use KANJIDIC2 / Kanjium.
+- [ ] **Acounts and cloud-backed user data**: add sign-in, replace browser/session-dependent storage with a database for user details and progress, and cloud file storage for custom-word audio so it persists across sessions and devices.
+- [ ] **Record-and-compare**: capture microphone audio, show the learner's pitch contour against the reference, and provide a mora-level score.
 - [ ] **More real audio**: find permissively licensed Tokyo-accent clips for Katakana words and phrases, and use them ahead of synthetic audio.
 - [ ] **Spaced repetition**: replace weighted random selection with a real system such as Leitner or FSRS.
 - [ ] **Sentence deck**: add short graded sentences with chunk highlighting, beyond the existing 40 phrases.
@@ -20,4 +21,3 @@ Priorities are ordered. The first item remains the active priority; completed wo
 - [ ] **Verify and correct accents** against the teacher's material; add a per-item "report wrong pitch" note stored locally.
 - [ ] **Offline / PWA** packaging.
 - [ ] **Accessibility pass**, including screen-reader labels on pitch bars and Japanese font fallbacks across platforms.
-- [ ] **Low priority — accounts and cloud-backed user data**: add sign-in, replace browser/session-dependent storage with a database for user details and progress, and cloud file storage for custom-word audio so it persists across sessions and devices.
