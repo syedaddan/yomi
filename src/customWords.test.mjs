@@ -53,3 +53,10 @@ test('ships female VOICEVOX references but no male VOICEVOX clips', () => {
   }
   assert.equal(readdirSync(new URL('../out/audio/', import.meta.url)).some((name) => name.startsWith('tm_')), false);
 });
+
+test('keeps coronavirus pitch unknown while shipping its female recording', () => {
+  const word = data.kata.find((row) => row.kana === 'コロナウイルス');
+  assert.ok(word);
+  assert.equal(word.accent, '');
+  assert.ok(word.ttsF);
+});

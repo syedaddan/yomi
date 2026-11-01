@@ -298,7 +298,9 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
                       <InfoButton label="About these recordings">
                         {prefs.voice === 'recording' && (item.audio || item.humanAudioId || item.humanAudioUrl)
                           ? 'This word has a human recording. Its pitch may differ from the dictionary marks.'
-                          : 'Female synthetic voice (VOICEVOX:九州そら). Its pitch follows the dictionary accent; trust the marks if they disagree.'}
+                          : item.chunks.some((chunk) => chunk.a == null)
+                            ? 'Female synthetic voice (VOICEVOX:九州そら). No dictionary pitch is available for this word.'
+                            : 'Female synthetic voice (VOICEVOX:九州そら). Its pitch follows the dictionary accent; trust the marks if they disagree.'}
                         {item.sourceUrl && <> <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">Human recording source.</a></>}
                         {item.alt && ' The other recording is a Kansai-accent speaker, so pitch can differ from the marks.'}
                       </InfoButton>
