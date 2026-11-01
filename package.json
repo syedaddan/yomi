@@ -10,7 +10,7 @@
     "build": "vite build",
     "postbuild": "node scripts/copy-404.mjs",
     "preview": "vite preview",
-    "test": "node --test src/core.test.mjs src/customWords.test.mjs src/voicevox.test.mjs"
+    "test": "node --test src/core.test.mjs src/customWords.test.mjs src/kanji.test.mjs src/voicevox.test.mjs"
   },
   "dependencies": {
     "react": "^19.1.0",

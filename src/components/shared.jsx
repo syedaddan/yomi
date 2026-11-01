@@ -177,7 +177,7 @@ export function SectionNav({ value, onNavigate }) {
             onNavigate(key);
           }}
         >
-          {label}{key === 'kanji' && <small> later</small>}
+          {label}
         </a>
       ))}
     </nav>

@@ -1,6 +1,6 @@
 # Yomi (読み)
 
-A small React Japanese **reading trainer** for hiragana and katakana (the Kanji section is a placeholder for later).
+A small React Japanese **reading trainer** for hiragana, katakana, and beginner kanji.
 Built for a learner who is preparing for class reading tests and wants to stop decoding character by character.
 
 The app is a small React site built with Vite. The study site is static and needs no account or backend. The Add words page uses a local VOICEVOX Engine on your own computer when you create a word. The illustrated Yomi mark is also used as the site favicon; audio and data credits are available from the information button beside the logo. Pages use extensionless paths, with Drill at the site root.
@@ -16,13 +16,13 @@ The owner's goals (from the Claude Project "Japanese Reading"):
 | **Speed** (read words and whole phrases without stalling on characters) | Drill with timed reads, Flash mode (word hides after N ms), 60-second Sprint (mora/min), Phrase pacer (highlight moves at a set mora/s), weighted shuffle that repeats slow and missed cards |
 | **Accuracy** (pronunciation + intonation) | Every word shows pitch-accent marks (red bar above = high, blue bar below = low, ↘ = drop, ↗ = question). Human recordings are preferred where available; female VOICEVOX is the synthetic voice. |
 | **Correctness** (confusable characters) | "Look-alikes" page: シ/ツ, ソ/ン, ぬ/め, ね/れ/わ, etc., with quizzes and tips. Progress page tracks per-item misses |
-| **Kanji** | Section exists, empty ("later") |
+| **Kanji** | N5-focused study cards show KANJIDIC2 on/kun readings and Kanjium-pitched example words, with a furigana toggle |
 
 Human clips are preferred for playback when available. Every custom word also gets a female VOICEVOX clip, even when a human recording is found.
 
 ## 2. Features (current state)
 
-- **Drill section**: mix decks freely (Hiragana 182, Katakana 164, Phrases 40, plus words added in this browser), filter by themes (Home, Food, People, Places, Time, Nature, Body, IT & Work, Verbs, Adjectives, Tech, Food & Drink, Travel, Clothes, School & Fun, Look-alikes, Greetings, Class & Daily ...).
+- **Drill section**: mix decks freely (Hiragana 193, Katakana 169, Phrases 40, plus words added in this browser), filter by themes (Home, Food, People, Places, Time, Nature, Body, IT & Work, Verbs, Adjectives, Tech, Food & Drink, Travel, Clothes, School & Fun, Look-alikes, Greetings, Class & Daily ...).
   - Modes: Read (time measured to reveal), Flash (hidden after N ms), Sprint (60 s).
   - Reveal shows pitch marks, romaji, meaning, audio controls (human recording / female VOICEVOX, Play, Slow, "Other recording" clip where present).
   - Rate: Missed / Slow / Got it (keys 1/2/3). Stats persist in `localStorage`.
@@ -30,6 +30,7 @@ Human clips are preferred for playback when available. Every custom word also ge
   - Keys: Space/Enter reveal, P play, 1/2/3 rate, ←/→ back/forward, X (sprint miss).
 - **Phrase pacer section**: pick a phrase, set speed (mora/s), highlight walks the moras. "Speak along" plays a female VOICEVOX clip and the highlight is driven by `audio.currentTime` against exact per-mora onset times (so voice and highlight cannot drift). Previous / Next (B / N, ← →).
 - **Add words section**: add Hiragana or Katakana words to a browser-local deck with meaning, theme, optional dictionary pitch, source link, and optional human audio. Search for human audio first; generating a female VOICEVOX clip is always required. Difficult starter words include コロナウイルス, きょうりゅう, and きゅうきゅうしゃ.
+- **Kanji section**: study a curated 100-character N5-focused set. Reveal KANJIDIC2 on/kun readings and example compounds with Kanjium pitch accents; search by character, reading, meaning, or example and toggle furigana.
 - **Look-alikes section**: 20-item quizzes over confusable sets.
 - **Progress section**: per-session and saved stats (see the section).
 - Light/dark theme (follows OS), phone-friendly layout, keyboard friendly. Romaji and pitch-mark information buttons remain fully visible beside their controls in the bottom dock; the Yomi mark uses the app's blue accent.
@@ -51,7 +52,8 @@ yomi/
       Drill.jsx          card modes, rating, history, and sprint
       Pacer.jsx          phrase selection and synchronized playback
       AddWords.jsx       browser-local word form and starter vocabulary
-      StudyTabs.jsx      look-alikes, progress, and kanji placeholder
+      StudyTabs.jsx      look-alikes and progress
+      KanjiDeck.jsx      N5 kanji cards, readings, furigana, and pitch-marked examples
       SettingsBar.jsx    fixed bottom settings dock and expandable controls
       shared.jsx         pitch display, navigation, and shared controls
     core.js              pure mora, pitch, and romaji helpers
@@ -64,6 +66,7 @@ yomi/
     styles.css           app styles
   build/
     candidates.py, analyze.py, hira_rows.json   hiragana word selection + Tofugu clip matching
+    kanji_deck.py      builds the kanji data from KANJIDIC2 and Kanjium
     build2.py         builds data.json skeleton (katakana deck, phrases, Kanjium accents)
     qa.py             F0 sanity check of human recordings + selects phrase recordings
     add_alt.py        adds Kansai alternate clips (f###, pf##)
@@ -75,7 +78,8 @@ yomi/
   tests/
     smoke.py, pace_test.py, clip_test.py, nav_test.py    Playwright (Chromium) tests
   out/
-    data.json         deck data imported by the app
+    data.json         kana and phrase data imported by the app
+    kanji.json        KANJIDIC2 character readings and Kanjium vocabulary accents
     audio/            source audio files used by the app and generators
   public/audio/       generated local copy served by Vite (git-ignored)
   dist/               generated static site uploaded to GitHub Pages (git-ignored)
@@ -90,6 +94,7 @@ yomi/
 - To create a custom word, search for a human recording first, provide its source if found, then generate a female VOICEVOX clip. The page requires the VOICEVOX Engine at `127.0.0.1:50021` with browser CORS enabled. If no human recording is found, the female clip is still generated and used.
 - Deck, mode, script, and audio choices use compact pressed-state buttons rather than radio controls. Voice and audio details are available from keyboard-accessible `i` information buttons.
 - `out/data.json` is imported into the app at build time. Before starting Vite or building, an npm pre-script copies `out/audio/` to the ignored `public/audio/`; Vite then serves and bundles those static audio files.
+- The Kanji section is a separate N5-focused study deck and does not change kana drill selection. Its curated character set is paired with KANJIDIC2 readings/meanings and Kanjium example-word pitch accents. JLPT does not publish an official kanji list.
 - `data.json` schema (male VOICEVOX clips and fields are removed):
   ```
   hira: [{kana, en, theme, accent, audio, alt, ttsF}]
@@ -164,6 +169,11 @@ python3 tts/gen_female.py     # female bundle + ttsF/tlF/tendF
 ```
 Check each script's header for exact arguments; they use `ROOT`-relative paths, so run them from anywhere.
 
+To regenerate the Kanji data, download [KANJIDIC2](https://www.edrdg.org/kanjidic/kanjidic2.xml.gz) and [Kanjium accents.txt](https://github.com/mifunetoshiro/kanjium/blob/master/data/source_files/raw/accents.txt), then run:
+```
+python3 build/kanji_deck.py <kanjidic2.xml.gz> <accents.txt> out/kanji.json
+```
+
 Curated deck audio is generated into `out/audio/female_voice.mp3` before building and ships with the static site; the hosted site does not need a running VOICEVOX engine for its built-in words. To add personal words from the site, run the local VOICEVOX Engine with browser CORS enabled (for example, `run.exe --cors_policy_mode all` on Windows), then open the **Add words** section. Those words and recordings stay in that browser.
 
 ## 8. Known limitations
@@ -172,7 +182,7 @@ Curated deck audio is generated into `out/audio/female_voice.mp3` before buildin
 - Within phrases each chunk uses its own dictionary pitch; real speech shifts pitch across chunks. A visible note says so.
 - 64 hiragana words and 36 of 40 phrases have no real Tokyo-accent recording. Katakana has none. These use VOICEVOX.
 - No microphone / pronunciation scoring yet (the "accuracy" goal is only listening + marks so far).
-- No kanji. No furigana. Stats are per browser (`localStorage`), no sync or export.
+- Kanji practice is a curated N5-focused character set with example vocabulary; it is separate from the kana drill and does not yet save kanji progress. Stats are per browser (`localStorage`), no sync or export.
 - Progress and preferences stay in this browser's `localStorage`; they do not sync to other devices.
 - The GitHub Pages study site needs an internet connection for Google Fonts and the first lazy load of the bundled female voice. Adding words also requires a locally running VOICEVOX Engine.
 
@@ -183,7 +193,8 @@ The prioritized project roadmap, including deck expansion and user-added vocabul
 ## 10. Licences and credits (keep these in the page footer)
 
 - Word recordings: WaniKani / Tofugu, CC BY-SA 4.0 (derived mp3s in this repo remain CC BY-SA).
-- Pitch accents: Kanjium.
+- Kanji readings and meanings: KANJIDIC2, © Electronic Dictionary Research and Development Group (EDRDG), CC BY-SA 4.0. [Source](https://www.edrdg.org/kanjidic/kanjidic2.xml.gz) · [licence](https://www.edrdg.org/edrdg/licence.html).
+- Pitch accents: Kanjium, including additions and modifications provided by Uros O., CC BY-SA 4.0. [Source](https://github.com/mifunetoshiro/kanjium) · [licence](https://creativecommons.org/licenses/by-sa/4.0/).
 - Voice: VOICEVOX:九州そら. VOICEVOX's terms require crediting the character. Check the character's terms before commercial use.
 - Page code: yours to license.
 

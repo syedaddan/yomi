@@ -243,20 +243,4 @@ function ProgressTab({ store, setStore, notify }) {
   );
 }
 
-function KanjiTab() {
-  return (
-    <section className="panel" id="page-kanji">
-      <div className="card stack">
-        <h2>Kanji decks are not filled yet</h2>
-        <p className="note">This is where kanji will plug in. Future cards can show furigana, on/kun readings, and mix into the kana decks.</p>
-        <div className="kanji-slot">
-          <div><span className="jp">日</span>Words with kanji</div>
-          <div><span className="jp">本</span>Readings (on / kun)</div>
-          <div><span className="jp">学</span>Look-alike kanji</div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export { KanjiTab, LookalikeTab, ProgressTab };
+export { LookalikeTab, ProgressTab };

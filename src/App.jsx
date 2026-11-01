@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import Drill from './components/Drill.jsx';
 import Pacer from './components/Pacer.jsx';
 import AddWords from './components/AddWords.jsx';
-import { KanjiTab, LookalikeTab, ProgressTab } from './components/StudyTabs.jsx';
+import KanjiDeck from './components/KanjiDeck.jsx';
+import { LookalikeTab, ProgressTab } from './components/StudyTabs.jsx';
 import { InfoButton, SectionNav, Toast } from './components/shared.jsx';
 import SettingsBar from './components/SettingsBar.jsx';
 import { DEFAULT_PREFS, loadStore, preferencesFrom, saveStore } from './storage.js';
@@ -169,7 +170,7 @@ export default function App() {
           {page === 'pacer' && <Pacer active prefs={prefs} setPreference={setPreference} notify={notify} />}
           {page === 'alike' && <LookalikeTab active store={store} setStore={setStore} />}
           {page === 'progress' && <ProgressTab store={store} setStore={setStore} notify={notify} />}
-          {page === 'kanji' && <KanjiTab />}
+          {page === 'kanji' && <KanjiDeck prefs={prefs} />}
           {page === 'add' && <AddWords customItems={store.customItems || []} onAdd={addCustomItem} onDelete={deleteCustomItem} />}
         </main>
 
