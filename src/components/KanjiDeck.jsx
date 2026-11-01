@@ -115,9 +115,10 @@ export default function KanjiDeck({ prefs }) {
                   <span className="hint">{card.grade ? `Kyoiku grade ${card.grade}` : 'N5 list'}</span>
                 </div>
                 <div className="kanji-prompt" lang="ja">{card.character}</div>
-                {!revealed ? (
-                  <button type="button" className="btn primary" onClick={() => setRevealed(true)}>Show readings and words</button>
-                ) : (
+                <button type="button" className="btn primary" onClick={() => setRevealed((value) => !value)}>
+                  {revealed ? 'Hide answer' : 'Show readings and words'}
+                </button>
+                {revealed && (
                   <div className="kanji-answer">
                     <p className="kanji-meaning">{card.meanings.join(' · ')}</p>
                     <div className="kanji-reading-grid">
@@ -144,7 +145,6 @@ export default function KanjiDeck({ prefs }) {
               </div>
               <div className="kanji-navigation">
                 <button type="button" className="btn" disabled={index === 0} onClick={() => moveCard(index - 1)}>Previous</button>
-                <button type="button" className="btn" onClick={() => setRevealed((value) => !value)}>{revealed ? 'Hide answer' : 'Reveal'}</button>
                 <button type="button" className="btn primary" disabled={index >= cards.length - 1} onClick={() => moveCard(index + 1)}>Next</button>
               </div>
             </>
