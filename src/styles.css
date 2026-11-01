@@ -312,7 +312,7 @@ td.num, th.num { text-align: right; font-family: var(--f-mono); font-variant-num
 .custom-word-list li a { color: var(--accent); font-size: .82rem; }
 .custom-word-list li .btn { margin-left: auto; }
 @media (max-width: 620px) {
-  body { padding-bottom: 150px; }
+  body { padding-bottom: 150px;   }
   .kanji-deck { padding: 14px; gap: 14px; }
   .kanji-group-controls { grid-template-columns: minmax(0, 1fr); align-items: stretch; }
   .kanji-unlock { justify-content: space-between; }
@@ -339,4 +339,5 @@ td.num, th.num { text-align: right; font-family: var(--f-mono); font-variant-num
   .section-nav { margin-top: 0; }
   .nav-link { padding: 8px 10px; }
 }
+body.no-settings-dock { padding-bottom: 24px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

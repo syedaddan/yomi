@@ -16,7 +16,8 @@ import {
   unlockNextKanjiGroup,
 } from './storage.js';
 
-const pages = ['drill', 'pacer', 'alike', 'progress', 'kanji', 'add'];
+const pages = ['drill', 'kanji', 'pacer', 'alike', 'progress', 'add'];
+const pagesWithSettings = new Set(['drill', 'kanji', 'pacer', 'alike']);
 
 const basePath = import.meta.env.BASE_URL.replace(/\/+$/, '');
 
@@ -83,6 +84,11 @@ export default function App() {
   }, [page]);
 
   useEffect(() => {
+    document.body.classList.toggle('no-settings-dock', !pagesWithSettings.has(page));
+    return () => document.body.classList.remove('no-settings-dock');
+  }, [page]);
+
+  useEffect(() => {
     const timer = window.setTimeout(() => saveStore(store), 250);
     return () => window.clearTimeout(timer);
   }, [store]);
@@ -105,7 +111,7 @@ export default function App() {
   function resetSection(section) {
     const defaults = DEFAULT_PREFS;
     const resetValues = {
-      display: { romaji: defaults.romaji, marks: defaults.marks, mode: defaults.mode },
+      display: { romaji: defaults.romaji, marks: defaults.marks, furigana: defaults.furigana, mode: defaults.mode },
       decks: { decks: { ...defaults.decks } },
       themes: { themes: [] },
       reading: { mode: defaults.mode, flashMs: defaults.flashMs, chunk: defaults.chunk },

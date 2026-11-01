@@ -4,6 +4,7 @@ export const STORAGE_KEY = 'yomi-drill-v1';
 export const DEFAULT_PREFS = {
   romaji: true,
   marks: true,
+  furigana: true,
   chunk: true,
   decks: { hira: true, kata: true, phr: false },
   themes: [],

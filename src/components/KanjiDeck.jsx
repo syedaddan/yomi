@@ -50,7 +50,6 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext }) {
   const [query, setQuery] = useState('');
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
-  const [showFurigana, setShowFurigana] = useState(true);
   const [selectedGroupId, setSelectedGroupId] = useState(unlocked[unlocked.length - 1]);
   const activeGroup = kanjiDeck.groups.find((group) => group.id === selectedGroupId && unlocked.includes(group.id))
     || kanjiDeck.groups.find((group) => group.id === unlocked[unlocked.length - 1]);
@@ -168,22 +167,13 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext }) {
                     </div>
                     <div className="kanji-examples-heading">
                       <h3>Examples</h3>
-                      <label className="kanji-furigana-toggle">
-                        <span>Furigana</span>
-                        <button
-                          type="button"
-                          className="choice-button"
-                          aria-pressed={showFurigana}
-                          onClick={() => setShowFurigana((value) => !value)}
-                        >{showFurigana ? 'On' : 'Off'}</button>
-                      </label>
                     </div>
                     <div className="kanji-examples">
                       {card.words.map((word) => (
                         <KanjiExample
                           key={`${word.word}-${word.reading}`}
                           word={word}
-                          showFurigana={showFurigana}
+                          showFurigana={prefs.furigana}
                           showRomaji={prefs.romaji}
                           showMarks={prefs.marks}
                         />

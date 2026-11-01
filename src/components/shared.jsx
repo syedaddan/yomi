@@ -156,11 +156,11 @@ export function Toast({ message }) {
 export function SectionNav({ value, onNavigate }) {
   const pages = [
     ['drill', 'Drill'],
+    ['kanji', 'Kanji'],
     ['pacer', 'Phrase pacer'],
     ['alike', 'Look-alikes'],
     ['add', 'Add words'],
     ['progress', 'Progress'],
-    ['kanji', 'Kanji'],
   ];
   return (
     <nav className="section-nav" aria-label="Sections">

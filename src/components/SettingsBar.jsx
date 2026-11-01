@@ -83,6 +83,9 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
   const phraseThemes = [...new Set(PHRASES.map((phrase) => phrase.theme))];
   const phrases = PHRASES.filter((phrase) => !prefs.paceTheme || phrase.theme === prefs.paceTheme);
   const selectedPhrase = PHRASES.find((phrase) => phrase.id === prefs.pacePhraseId) || phrases[0];
+  const showDock = ['drill', 'kanji', 'pacer', 'alike'].includes(page);
+  const showDisplayOptions = page === 'drill' || page === 'kanji' || page === 'pacer';
+  const showSettingsControls = page === 'drill' || page === 'pacer' || page === 'alike';
 
   useEffect(() => {
     setOpenSection('');
@@ -135,8 +138,10 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
 
   function reset(name) {
     resetSection(name);
-    if (name === 'display' || name === 'decks' || name === 'themes' || name === 'reading') onDrillReset();
+    if (page === 'drill' && ['display', 'decks', 'themes', 'reading'].includes(name)) onDrillReset();
   }
+
+  if (!showDock) return null;
 
   return (
     <aside className="settings-dock" aria-label="Settings">
@@ -150,34 +155,44 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
         />
       )}
       <div className="settings-dock-inner" ref={bar}>
-        <div className="settings-display-row">
-          <div className="display-options" role="group" aria-label="Display options">
-            <div className="display-control">
-              <button className="choice-button" type="button" aria-pressed={prefs.romaji} onClick={() => setPreference('romaji', !prefs.romaji)}>Romaji</button>
-              <InfoButton label="Romaji information">Show or hide the Latin-letter reading alongside Japanese text.</InfoButton>
+        {showDisplayOptions && (
+          <div className="settings-display-row">
+            <div className="display-options" role="group" aria-label="Display options">
+              <div className="display-control">
+                {page === 'kanji' ? (
+                  <button className="choice-button" type="button" aria-pressed={prefs.furigana} onClick={() => setPreference('furigana', !prefs.furigana)}>Furigana</button>
+                ) : (
+                  <>
+                    <button className="choice-button" type="button" aria-pressed={prefs.romaji} onClick={() => setPreference('romaji', !prefs.romaji)}>Romaji</button>
+                    <InfoButton label="Romaji information">Show or hide the Latin-letter reading alongside Japanese text.</InfoButton>
+                  </>
+                )}
+              </div>
+              {page !== 'pacer' && (
+                <div className="display-control">
+                  <button className="choice-button" type="button" aria-pressed={prefs.marks} onClick={() => setPreference('marks', !prefs.marks)}>Pitch marks</button>
+                  <InfoButton label="Pitch marks information">Show or hide the high/low pitch marks on readings.</InfoButton>
+                </div>
+              )}
+              {page === 'drill' && (
+                <ChoiceButtons
+                  label="Reading mode"
+                  value={prefs.mode}
+                  options={['read', 'flash', 'sprint'].map((mode) => [mode, mode[0].toUpperCase() + mode.slice(1)])}
+                  onChange={(mode) => { setPreference('mode', mode); onDrillReset(); }}
+                />
+              )}
             </div>
-            <div className="display-control">
-              <button className="choice-button" type="button" aria-pressed={prefs.marks} onClick={() => setPreference('marks', !prefs.marks)}>Pitch marks</button>
-              <InfoButton label="Pitch marks information">Show or hide the high/low pitch marks on readings.</InfoButton>
-            </div>
-            {page === 'drill' && (
-              <ChoiceButtons
-                label="Reading mode"
-                value={prefs.mode}
-                options={['read', 'flash', 'sprint'].map((mode) => [mode, mode[0].toUpperCase() + mode.slice(1)])}
-                onChange={(mode) => { setPreference('mode', mode); onDrillReset(); }}
-              />
-            )}
+            <button
+              className="reset-all"
+              type="button"
+              aria-label="Reset all display options"
+              title="Reset all display options"
+              onClick={() => reset('display')}
+            ><span aria-hidden="true">↺</span> Reset all</button>
           </div>
-          <button
-            className="reset-all"
-            type="button"
-            aria-label="Reset all display options"
-            title="Reset all display options"
-            onClick={() => reset('display')}
-          ><span aria-hidden="true">↺</span> Reset all</button>
-        </div>
-        <div className="settings-controls-row">
+        )}
+        {showSettingsControls && <div className="settings-controls-row">
             <div className="settings-scroll">
               {page === 'drill' && (
             <>
@@ -310,9 +325,11 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
                 })}
               </div>
             )}
-            <button className="reset-all" type="button" aria-label="Reset all settings" title="Reset all settings" onClick={resetAll}><span aria-hidden="true">↺</span> Reset all</button>
-          </div>
-        </div>
+            {!showDisplayOptions && (
+              <button className="reset-all" type="button" aria-label="Reset all settings" title="Reset all settings" onClick={resetAll}><span aria-hidden="true">↺</span> Reset all</button>
+            )}
+        </div>}
+      </div>
     </aside>
   );
 }
