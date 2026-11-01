@@ -25,12 +25,13 @@ Human clips are preferred for playback when available. Every custom word also ge
 - **Drill section**: mix decks freely (Hiragana 193, Katakana 169, Phrases 40, plus words added in this browser), filter by themes (Home, Food, People, Places, Time, Nature, Body, IT & Work, Verbs, Adjectives, Tech, Food & Drink, Travel, Clothes, School & Fun, Look-alikes, Greetings, Class & Daily ...).
   - Modes: Read (time measured to reveal), Flash (hidden after N ms), Sprint (60 s).
   - Reveal shows pitch marks, romaji, meaning, audio controls (human recording / female VOICEVOX, Play, Slow, "Other recording" clip where present).
-  - Rate: Missed / Slow / Got it (keys 1/2/3). Stats persist in `localStorage`.
+  - Rate: Missed / Slow / Got it (keys 1/2/3). Progress persists locally and syncs to your account when signed in.
   - **Back / Forward** (buttons and ← → keys). History stack of the last 100 cards; revisited cards show revealed and are never double-counted. Forward on a fresh card = Skip (no rating recorded).
   - Keys: Space/Enter reveal, P play, 1/2/3 rate, ←/→ back/forward, X (sprint miss).
 - **Phrase pacer section**: pick a phrase, set speed (mora/s), highlight walks the moras. "Speak along" plays a female VOICEVOX clip and the highlight is driven by `audio.currentTime` against exact per-mora onset times (so voice and highlight cannot drift). Previous / Next (B / N, ← →).
-- **Add words section**: add Hiragana or Katakana words to a browser-local deck with meaning, theme, optional dictionary pitch, source link, and optional human audio. Search for human audio first; generating a female VOICEVOX clip is always required. Difficult starter words include コロナウイルス, きょうりゅう, and きゅうきゅうしゃ.
-- **Kanji section**: study ordered lesson groups with KANJIDIC2 readings and Kanjium-pitched example compounds. Each kanji, listed reading, and example sentence has VOICEVOX audio; reusable Tatoeba sentence recordings play first where available. Sentence text, English translation, and per-item attribution are shown with each example.
+- **Add words section**: add Hiragana or Katakana words to a personal deck with meaning, theme, optional dictionary pitch, source link, and optional human audio. Signed-in users sync words and recordings; words join their existing Kana drill deck. Search for human audio first; generating a female VOICEVOX clip is always required. Difficult starter words include コロナウイルス, きょうりゅう, and きゅうきゅうしゃ.
+- **Kanji section**: study ordered lesson groups with KANJIDIC2 readings and Kanjium-pitched example compounds. Learners can reveal and rate each character; the Progress page tracks views and ratings. Only the admin can unlock lessons globally. Each kanji, listed reading, and example sentence has VOICEVOX audio; reusable Tatoeba sentence recordings play first where available. Sentence text, English translation, and per-item attribution are shown with each example.
+- **Account page**: manage a private profile and picture, set a password, or delete the account and its cloud data.
 - **Look-alikes section**: 20-item quizzes over confusable sets.
 - **Progress section**: per-session and saved stats (see the section).
 - Light/dark theme (follows OS), phone-friendly layout, keyboard friendly. Romaji and pitch-mark information buttons remain fully visible beside their controls in the bottom dock; the Yomi mark uses the app's blue accent.
@@ -114,7 +115,7 @@ yomi/
 - **Audio priority** in the drill: Female VOICEVOX uses the female bundle; Recording uses a human clip when available and otherwise the female bundle. A device voice is only a last resort if a clip cannot be loaded.
 - **Female bundle**: one MP3 fetched lazily on first use and sliced into per-item Blobs. No male VOICEVOX clips are shipped or used.
 - **Pacer clip sync**: the female VOICEVOX clip's per-mora onset timeline drives the highlight from `audio.currentTime`; playback rate is clamped to 0.5-2.
-- Preferences and stats are retained in `localStorage` for local-first use and synced to Supabase when signed in.
+- Preferences and progress are retained locally for local-first use and synced to separate per-user Supabase tables when signed in.
 
 ## 5. What was done, with measurements (be honest about quality)
 
@@ -155,12 +156,13 @@ To publish with GitHub Pages, push to the `main` or `master` branch. The workflo
 
 ### Optional Supabase accounts and sync
 
-1. Create a Supabase project and run [`supabase/migrations/202611020001_user_data.sql`](./supabase/migrations/202611020001_user_data.sql) in its SQL editor.
+1. Create a Supabase project and run both migrations, in order, in its SQL editor: [`202611020001_user_data.sql`](./supabase/migrations/202611020001_user_data.sql), then [`202611020002_profiles_and_structured_progress.sql`](./supabase/migrations/202611020002_profiles_and_structured_progress.sql). The second migration converts existing JSON progress into readable per-user tables and assigns admin access only to `syedaddan@gmail.com`. If you already ran the first migration for your project, run only the second; don’t rerun the first.
 2. In Supabase Authentication, enable Google and email OTP (magic links). Add the local and deployed Yomi URLs to the allowed redirect URLs. Configure the Google OAuth client in Supabase; no Google client secret belongs in this repository.
 3. Copy `.env.example` to `.env.local` for local development and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` using the project URL and public anon/publishable key.
-4. Add those same values as GitHub Actions repository variables named `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` so the Pages build enables accounts. These browser values are public; database and storage access is protected by the migration's row-level security policies.
+4. Add those same values as GitHub Actions repository variables named `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` so the Pages build enables accounts. These browser values are public; database and storage access is protected by row-level security.
+5. Install the [Supabase CLI](https://supabase.com/docs/guides/cli), sign in with `supabase login`, link this repository to your project with `supabase link --project-ref <your-project-ref>`, then deploy account deletion with `supabase functions deploy delete-account`. The function verifies the signed-in user and uses Supabase's server-side service-role environment value; never copy that secret into GitHub variables or the browser app.
 
-On first visit, learners can register/sign in with Google or an emailed sign-in link, or continue locally. On sign-in, Yomi offers an explicit transfer/merge or cloud-data choice when the device and account differ. Custom recordings are uploaded to the user's private storage area.
+On first visit, learners can register/sign in with Google or an emailed sign-in link, or continue locally. On sign-in, Yomi offers an explicit transfer/merge or cloud-data choice when the device and account differ. Custom recordings are uploaded to the user's private storage area. Signed-in users can edit a private profile, upload an avatar, set a password, or delete their account and associated data. Progress, look-alike results, Kanji views/ratings, preferences, sprints, and custom kana words are stored in separate per-user tables. Only the admin account can unlock Kanji lessons globally; other users are prompted to contact the admin.
 
 Optional browser tests use Playwright. Start `npm run dev` in one terminal, install Playwright and Chromium once (`pip install playwright` and `playwright install chromium`), then run `python tests/smoke.py`, `python tests/pace_test.py`, `python tests/clip_test.py`, or `python tests/nav_test.py` in another terminal.
 
@@ -195,7 +197,7 @@ Run `python3 tts/import_tatoeba.py` to add sourced sentences and translations wi
 - Within phrases each chunk uses its own dictionary pitch; real speech shifts pitch across chunks. A visible note says so.
 - 64 hiragana words and 36 of 40 phrases have no real Tokyo-accent recording. Katakana has none. These use VOICEVOX.
 - No microphone / pronunciation scoring yet (the "accuracy" goal is only listening + marks so far).
-- Kanji practice is separate from the kana drill. Group unlocks are saved per browser (`localStorage`), but card-level study progress does not sync or export. The filename-derived list has 272 unique characters (plus two preserved from the previous deck), fewer than the approximately 450 estimated from the full slide contents; characters not present in filenames are not included.
+- Kanji practice is separate from the kana drill. Lesson availability is global and admin-controlled; per-character views and ratings sync for signed-in users. The filename-derived list has 272 unique characters (plus two preserved from the previous deck), fewer than the approximately 450 estimated from the full slide contents; characters not present in filenames are not included.
 - Without signing in, progress and preferences stay in this browser's `localStorage`; account sync requires configuring Supabase as described above.
 - The GitHub Pages study site needs an internet connection for Google Fonts and the first lazy load of the bundled female voice. Adding words also requires a locally running VOICEVOX Engine.
 

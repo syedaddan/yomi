@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { median, romaji } from '../core.js';
 import { DECK_NAMES, ITEMS, LOOKALIKE_SETS, itemFromCustomRecord } from '../data.js';
+import kanjiDeck from '../../out/kanji.json';
 
 function shuffle(values) {
   const result = [...values];
@@ -181,6 +182,22 @@ function ProgressTab({ store, setStore, notify }) {
   const highestSprint = Math.max(1, ...sprints.map((entry) => entry.mpm));
   const confusingPairs = Object.entries(store.conf).filter(([key]) => key.startsWith('pair:'))
     .sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const kanjiCharacters = kanjiDeck.kanji;
+  const kanjiViews = Object.values(store.kanjiProgress || {}).reduce((sum, progress) => sum + (progress.views || 0), 0);
+  const kanjiRatings = Object.values(store.kanjiProgress || {}).reduce((sum, progress) => sum + (progress.n || 0), 0);
+  const kanjiGot = Object.values(store.kanjiProgress || {}).reduce((sum, progress) => sum + (progress.got || 0), 0);
+  const kanjiGroups = kanjiDeck.groups.map((group) => {
+    const characters = kanjiCharacters.filter((entry) => entry.groupId === group.id);
+    const studied = characters.filter((entry) => (store.kanjiProgress?.[entry.character]?.views || 0) > 0).length;
+    const ratings = characters.reduce((sum, entry) => sum + (store.kanjiProgress?.[entry.character]?.n || 0), 0);
+    const gotIt = characters.reduce((sum, entry) => sum + (store.kanjiProgress?.[entry.character]?.got || 0), 0);
+    return { group, characters, studied, ratings, gotIt };
+  });
+  const kanjiNeedsWork = kanjiCharacters
+    .map((entry) => ({ entry, progress: store.kanjiProgress?.[entry.character] }))
+    .filter(({ progress }) => progress && progress.n > 0 && progress.miss + progress.slow > 0)
+    .sort((a, b) => ((b.progress.miss * 2 + b.progress.slow) / b.progress.n) - ((a.progress.miss * 2 + a.progress.slow) / a.progress.n))
+    .slice(0, 10);
 
   return (
     <section className="panel" id="page-progress">
@@ -194,7 +211,7 @@ function ProgressTab({ store, setStore, notify }) {
               <div className="stat"><b>{times.length ? `${(median(times) / 1000).toFixed(1)}s` : '–'}</b><span>median read time</span></div>
               <div className="stat"><b>{elapsed ? (mora / (elapsed / 1000)).toFixed(1) : '–'}</b><span>mora per second</span></div>
             </div>
-          ) : <p className="empty">Nothing recorded yet. Rate a few cards in Drill and your numbers appear here. They are saved in this browser only.</p>}
+          ) : <p className="empty">Nothing recorded yet. Rate a few cards in Drill and your numbers appear here. Progress saves in this browser and syncs to your account when signed in.</p>}
         </div>
         <div className="card stack">
           <h2>Decks</h2>
@@ -229,11 +246,50 @@ function ProgressTab({ store, setStore, notify }) {
           </tbody></table></div> : <p className="hint">Run a Look-alikes round to see which pairs trip you up.</p>}
         </div>
         <div className="card stack">
+          <h2>Kanji progress</h2>
+          {kanjiViews || kanjiRatings ? (
+            <>
+              <div className="summary">
+                <div className="stat"><b>{Object.values(store.kanjiProgress || {}).filter((entry) => entry.views > 0).length}/{kanjiCharacters.length}</b><span>characters viewed</span></div>
+                <div className="stat"><b>{kanjiViews}</b><span>total views</span></div>
+                <div className="stat"><b>{kanjiRatings}</b><span>ratings</span></div>
+                <div className="stat"><b>{kanjiRatings ? `${Math.round(100 * kanjiGot / kanjiRatings)}%` : '–'}</b><span>got it</span></div>
+              </div>
+              <div className="scroll-x"><table><thead><tr><th>Lesson</th><th className="num">Viewed</th><th className="num">Ratings</th><th className="num">Got it</th></tr></thead><tbody>
+                {kanjiGroups.map(({ group, characters, studied, ratings, gotIt }, index) => (
+                  <tr key={group.id}>
+                    <td>{group.additional ? 'Extras' : `Lesson ${index + 1}`}</td>
+                    <td className="num">{studied} / {characters.length}</td>
+                    <td className="num">{ratings}</td>
+                    <td className="num">{ratings ? `${Math.round(100 * gotIt / ratings)}%` : '–'}</td>
+                  </tr>
+                ))}
+              </tbody></table></div>
+              {kanjiNeedsWork.length > 0 && (
+                <>
+                  <h3>Kanji to review</h3>
+                  <div className="scroll-x"><table><thead><tr><th>Kanji</th><th>Meanings</th><th className="num">Missed</th><th className="num">Slow</th><th className="num">Rated</th></tr></thead><tbody>
+                    {kanjiNeedsWork.map(({ entry, progress }) => (
+                      <tr key={entry.character}>
+                        <td className="jp">{entry.character}</td>
+                        <td>{entry.meanings.join(' · ')}</td>
+                        <td className="num">{progress.miss}</td>
+                        <td className="num">{progress.slow}</td>
+                        <td className="num">{progress.n}</td>
+                      </tr>
+                    ))}
+                  </tbody></table></div>
+                </>
+              )}
+            </>
+          ) : <p className="hint">Study a Kanji, reveal its readings, then rate your recall to see progress here.</p>}
+        </div>
+        <div className="card stack">
           <h2>Reset</h2>
           <div className="confirm-row">
             {confirmReset ? <>
-              <span>Erase all saved progress on this device?</span>
-              <button className="btn miss" onClick={() => { setStore((current) => ({ ...current, stats: {}, sprints: [], conf: {} })); setConfirmReset(false); notify('Progress erased.'); }}>Yes, erase it</button>
+              <span>Erase all saved progress for this account?</span>
+              <button className="btn miss" onClick={() => { setStore((current) => ({ ...current, stats: {}, sprints: [], conf: {}, kanjiProgress: {} })); setConfirmReset(false); notify('Progress erased.'); }}>Yes, erase it</button>
               <button className="btn" onClick={() => setConfirmReset(false)}>Keep it</button>
             </> : <button className="btn" onClick={() => setConfirmReset(true)}>Reset progress</button>}
           </div>

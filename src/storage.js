@@ -24,7 +24,7 @@ export const DEFAULT_PREFS = {
 };
 
 export function emptyStore() {
-  return { stats: {}, sprints: [], conf: {}, prefs: {}, customItems: [] };
+  return { stats: {}, sprints: [], conf: {}, prefs: {}, customItems: [], kanjiProgress: {} };
 }
 
 export function normalizeStore(saved) {
@@ -39,6 +39,9 @@ export function normalizeStore(saved) {
     conf: saved.conf && typeof saved.conf === 'object' && !Array.isArray(saved.conf) ? saved.conf : {},
     prefs: { ...prefs, ...(prefs.voice === 'male' ? { voice: 'recording' } : {}) },
     customItems: Array.isArray(saved.customItems) ? saved.customItems : [],
+    kanjiProgress: saved.kanjiProgress && typeof saved.kanjiProgress === 'object' && !Array.isArray(saved.kanjiProgress)
+      ? saved.kanjiProgress
+      : {},
   };
 }
 

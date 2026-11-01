@@ -3,28 +3,35 @@ import Drill from './components/Drill.jsx';
 import Pacer from './components/Pacer.jsx';
 import AddWords from './components/AddWords.jsx';
 import KanjiDeck from './components/KanjiDeck.jsx';
+import AccountPage from './components/AccountPage.jsx';
 import { LookalikeTab, ProgressTab } from './components/StudyTabs.jsx';
 import { InfoButton, SectionNav, Toast } from './components/shared.jsx';
 import AccountPanel from './components/AccountPanel.jsx';
 import SettingsBar from './components/SettingsBar.jsx';
 import kanjiDeck from '../out/kanji.json';
+import {
+  publishNextKanjiLesson as publishNextKanjiLessonRemote,
+  readKanjiAvailability,
+  readOwnProfile,
+  removeOwnAvatar,
+  saveOwnProfile,
+  uploadOwnAvatar,
+} from './accountStore.js';
 import { mergeStores, readCloudStore, writeCloudStore } from './cloudStore.js';
-import { setCustomAudioUser, uploadCustomAudio } from './customAudio.js';
+import { deleteCustomAudio, setCustomAudioUser, uploadCustomAudio } from './customAudio.js';
 import { supabase, supabaseConfigured } from './supabase.js';
 import {
   DEFAULT_PREFS,
   emptyStore,
-  getUnlockedKanjiGroups,
   hasStoredStore,
   loadStore,
   normalizeStore,
   preferencesFrom,
   saveStore,
   userStorageKey,
-  unlockNextKanjiGroup,
 } from './storage.js';
 
-const pages = ['drill', 'kanji', 'pacer', 'alike', 'progress', 'add'];
+const pages = ['drill', 'kanji', 'pacer', 'alike', 'progress', 'add', 'account'];
 const pagesWithSettings = new Set(['drill', 'kanji', 'pacer', 'alike']);
 
 const basePath = import.meta.env.BASE_URL.replace(/\/+$/, '');
@@ -58,6 +65,7 @@ function hasSavedData(store) {
     || Object.keys(store.conf).length
     || Object.keys(store.prefs).length
     || store.customItems.length
+    || Object.keys(store.kanjiProgress || {}).length
     || store.kanjiUnlockedGroups?.length,
   );
 }
@@ -90,7 +98,13 @@ export default function App() {
   const [syncError, setSyncError] = useState('');
   const [pendingCloudStore, setPendingCloudStore] = useState(null);
   const [migrationRequired, setMigrationRequired] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [kanjiUnlockedCount, setKanjiUnlockedCount] = useState(1);
+  const [adminNotice, setAdminNotice] = useState(false);
   const cloudUserId = useRef(null);
+  const profileUserId = useRef(null);
   const cloudWriteQueue = useRef(Promise.resolve());
 
   useEffect(() => {
@@ -110,6 +124,10 @@ export default function App() {
       setCustomAudioUser(userId || null);
       if (!userId) {
         cloudUserId.current = null;
+        profileUserId.current = null;
+        setProfile(null);
+        setProfileLoading(false);
+        setProfileError('');
         const local = loadStore();
         setStore(local);
         setPrefs(preferencesFrom(local));
@@ -118,6 +136,21 @@ export default function App() {
         setSyncStatus('signed-out');
         return;
       }
+      profileUserId.current = userId;
+      setProfileLoading(true);
+      setProfileError('');
+      readOwnProfile(userId)
+        .then((nextProfile) => {
+          if (active && profileUserId.current === userId) setProfile(nextProfile);
+        })
+        .catch((error) => {
+          if (active && profileUserId.current === userId) {
+            setProfileError(error instanceof Error ? error.message : 'Could not load your profile.');
+          }
+        })
+        .finally(() => {
+          if (active && profileUserId.current === userId) setProfileLoading(false);
+        });
       if (cloudUserId.current === userId) return;
       const previousUserId = cloudUserId.current;
       cloudUserId.current = userId;
@@ -191,6 +224,34 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!supabase) return undefined;
+    let active = true;
+    let hasReportedError = false;
+    async function refreshAvailability() {
+      try {
+        const count = await readKanjiAvailability();
+        if (active) setKanjiUnlockedCount(Math.min(count, kanjiDeck.groups.length));
+      } catch (error) {
+        if (active && !hasReportedError) {
+          hasReportedError = true;
+          setToast(error instanceof Error ? error.message : 'Could not load Kanji lesson availability.');
+        }
+      }
+    }
+    function refreshWhenVisible() {
+      if (document.visibilityState === 'visible') refreshAvailability();
+    }
+    refreshAvailability();
+    const timer = window.setInterval(refreshAvailability, 30000);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, []);
+
   function navigate(nextPage, replace = false) {
     const url = `${pagePath(nextPage)}${window.location.search}`;
     if (replace) window.history.replaceState(null, '', url);
@@ -219,7 +280,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const label = { drill: 'Drill', pacer: 'Phrase pacer', alike: 'Look-alikes', progress: 'Progress', kanji: 'Kanji', add: 'Add words' }[page];
+    const label = { drill: 'Drill', pacer: 'Phrase pacer', alike: 'Look-alikes', progress: 'Progress', kanji: 'Kanji', add: 'Add words', account: 'Account' }[page];
     document.title = `${label} · Yomi`;
   }, [page]);
 
@@ -267,6 +328,62 @@ export default function App() {
 
   function notify(message) {
     setToast(message);
+  }
+
+  async function saveProfile(changes) {
+    const userId = authSession?.user?.id;
+    if (!userId) throw new Error('Sign in to edit your profile.');
+    const nextProfile = await saveOwnProfile(userId, changes);
+    setProfile(nextProfile);
+  }
+
+  async function uploadAvatar(file) {
+    const userId = authSession?.user?.id;
+    if (!userId) throw new Error('Sign in to change your profile picture.');
+    const nextProfile = await uploadOwnAvatar(userId, file);
+    setProfile(nextProfile);
+  }
+
+  async function removeAvatar() {
+    const userId = authSession?.user?.id;
+    if (!userId) throw new Error('Sign in to change your profile picture.');
+    const result = await removeOwnAvatar(userId);
+    setProfile(result.profile);
+    if (result.warning) throw new Error(result.warning);
+  }
+
+  async function setAccountPassword(password) {
+    if (!supabase) throw new Error('Account sign-in is not configured.');
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw new Error(`Could not update your password: ${error.message}`);
+  }
+
+  async function signOutAccount() {
+    if (!supabase) return;
+    const { error } = await supabase.auth.signOut();
+    if (error) throw new Error(`Could not sign out: ${error.message}`);
+    navigate('drill', true);
+  }
+
+  async function deleteAccount() {
+    const userId = authSession?.user?.id;
+    if (!userId || !supabase) throw new Error('Sign in to delete your account.');
+    const audioKeys = customAudioKeys(store);
+    if (audioKeys.length) await deleteCustomAudio(audioKeys);
+    const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
+    if (error) throw new Error(`Could not delete your account: ${error.message}`);
+    let cacheWarning = '';
+    try {
+      localStorage.removeItem(userStorageKey(userId));
+    } catch (error) {
+      cacheWarning = error instanceof Error ? error.message : 'Could not remove this browser’s account cache.';
+    }
+    const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
+    if (signOutError) throw new Error(`Your account was deleted, but sign-out failed: ${signOutError.message}`);
+    navigate('drill', true);
+    notify(cacheWarning
+      ? `Account deleted, but this browser’s saved copy could not be removed: ${cacheWarning}`
+      : 'Your account and associated data were deleted.');
   }
 
   function persistStore(nextStore) {
@@ -405,18 +522,39 @@ export default function App() {
     setStore(nextStore);
   }
 
-  function unlockNextKanjiLesson() {
-    const unlocked = getUnlockedKanjiGroups(store.kanjiUnlockedGroups, kanjiDeck.groups);
-    const nextUnlocked = unlockNextKanjiGroup(store.kanjiUnlockedGroups, kanjiDeck.groups);
-    if (nextUnlocked.length === unlocked.length) return false;
-    const nextStore = { ...store, kanjiUnlockedGroups: nextUnlocked };
-    if (!persistStore(nextStore)) {
-      notify('Could not save your unlocked Kanji lessons in this browser.');
+  async function publishNextKanjiLesson() {
+    if (!profile?.is_admin) {
+      setAdminNotice(true);
       return false;
     }
-    setStore(nextStore);
-    notify('Next Kanji group unlocked.');
-    return true;
+    if (!supabase || kanjiUnlockedCount >= kanjiDeck.groups.length) return false;
+    try {
+      const count = await publishNextKanjiLessonRemote(kanjiUnlockedCount);
+      setKanjiUnlockedCount(Math.min(count, kanjiDeck.groups.length));
+      notify('The next Kanji lesson is now available to everyone.');
+      return true;
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'Could not unlock the next Kanji lesson.');
+      return false;
+    }
+  }
+
+  function recordKanjiProgress(character, groupId, field, rating) {
+    setStore((current) => {
+      const previous = current.kanjiProgress?.[character] || {
+        groupId, views: 0, reveals: 0, n: 0, got: 0, slow: 0, miss: 0,
+      };
+      const next = { ...previous, groupId };
+      if (field === 'rating' && rating) {
+        next.n += 1;
+        next[rating] += 1;
+        next.lastReviewedAt = new Date().toISOString();
+      } else next[field] = (previous[field] || 0) + 1;
+      return {
+        ...current,
+        kanjiProgress: { ...current.kanjiProgress, [character]: next },
+      };
+    });
   }
 
   return (
@@ -426,6 +564,8 @@ export default function App() {
           <div className="top-in">
             <AccountPanel
               user={authSession?.user || null}
+              profile={profile}
+              onOpenAccount={() => navigate('account')}
               configured={supabaseConfigured}
               authReady={authReady}
               syncStatus={syncStatus}
@@ -462,17 +602,49 @@ export default function App() {
           {page === 'kanji' && (
             <KanjiDeck
               prefs={prefs}
-              unlockedGroupIds={store.kanjiUnlockedGroups}
-              onUnlockNext={unlockNextKanjiLesson}
+              unlockedGroupIds={kanjiDeck.groups.slice(0, kanjiUnlockedCount).map((group) => group.id)}
+              kanjiProgress={store.kanjiProgress}
+              canManageLessons={Boolean(profile?.is_admin)}
+              onPublishNext={publishNextKanjiLesson}
+              onAdminRequest={() => setAdminNotice(true)}
+              onViewKanji={(character, groupId) => recordKanjiProgress(character, groupId, 'views')}
+              onRevealKanji={(character, groupId) => recordKanjiProgress(character, groupId, 'reveals')}
+              onRateKanji={(character, groupId, rating) => recordKanjiProgress(character, groupId, 'rating', rating)}
               notify={notify}
             />
           )}
           {page === 'add' && <AddWords customItems={store.customItems || []} onAdd={addCustomItem} onDelete={deleteCustomItem} />}
+          {page === 'account' && (
+            <AccountPage
+              user={authSession?.user || null}
+              profile={profile}
+              profileLoading={profileLoading}
+              profileError={profileError}
+              onSaveProfile={saveProfile}
+              onUploadAvatar={uploadAvatar}
+              onRemoveAvatar={removeAvatar}
+              onSetPassword={setAccountPassword}
+              onDeleteAccount={deleteAccount}
+              onSignOut={signOutAccount}
+            />
+          )}
         </main>
 
       </div>
       <SettingsBar page={page} prefs={prefs} setPreference={setPreference} resetSection={resetSection} resetAll={resetAll} notify={notify} onDrillReset={() => setResetVersion((version) => version + 1)} customItems={store.customItems || []} />
       <Toast message={toast} />
+      {adminNotice && (
+        <div className="account-overlay" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setAdminNotice(false);
+        }}>
+          <section className="account-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-notice-title">
+            <button className="account-close" type="button" aria-label="Close" onClick={() => setAdminNotice(false)}>×</button>
+            <h2 id="admin-notice-title">Admin access required</h2>
+            <p className="hint">Only the Yomi admin can unlock lessons for everyone. Please contact <a href="mailto:syedaddan@gmail.com">syedaddan@gmail.com</a>.</p>
+            <button className="btn primary account-action" type="button" onClick={() => setAdminNotice(false)}>Got it</button>
+          </section>
+        </div>
+      )}
     </>
   );
 }

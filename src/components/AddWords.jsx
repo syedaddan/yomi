@@ -166,7 +166,7 @@ export default function AddWords({ customItems, onAdd, onDelete }) {
         <div className="add-words-intro">
           <div>
             <h2>Add a word</h2>
-            <p className="hint">Saved in this browser · Search for a human recording first.</p>
+            <p className="hint">Saved in this browser and added to your Hiragana or Katakana drill deck. Signed-in accounts sync custom words · Search for a human recording first.</p>
           </div>
         </div>
 

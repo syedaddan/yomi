@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import kanjiDeck from '../../out/kanji.json';
 import AudioButtons from './AudioButtons.jsx';
 import { romaji } from '../core.js';
@@ -110,11 +110,25 @@ function KanjiExample({ word, showFurigana, showRomaji, showMarks, notify }) {
   );
 }
 
-export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext, notify }) {
+export default function KanjiDeck({
+  prefs,
+  unlockedGroupIds,
+  kanjiProgress,
+  canManageLessons,
+  onPublishNext,
+  onAdminRequest,
+  onViewKanji,
+  onRevealKanji,
+  onRateKanji,
+  notify,
+}) {
   const unlocked = getUnlockedKanjiGroups(unlockedGroupIds, kanjiDeck.groups);
   const [query, setQuery] = useState('');
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [rated, setRated] = useState(false);
+  const seenCard = useRef('');
+  const revealedThisVisit = useRef(false);
   const [selectedGroupId, setSelectedGroupId] = useState(unlocked[unlocked.length - 1]);
   const activeGroup = kanjiDeck.groups.find((group) => group.id === selectedGroupId && unlocked.includes(group.id))
     || kanjiDeck.groups.find((group) => group.id === unlocked[unlocked.length - 1]);
@@ -136,6 +150,17 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext, notif
     });
   }, [activeGroup.id, query]);
   const card = cards[index] || cards[0];
+  const cardProgress = card ? kanjiProgress?.[card.character] : null;
+
+  useEffect(() => {
+    if (!card) return;
+    const visitKey = `${activeGroup.id}:${card.character}`;
+    if (seenCard.current === visitKey) return;
+    seenCard.current = visitKey;
+    revealedThisVisit.current = false;
+    setRated(false);
+    onViewKanji(card.character, activeGroup.id);
+  }, [activeGroup.id, card?.character]);
 
   function resetCards() {
     setIndex(0);
@@ -150,6 +175,7 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext, notif
   function moveCard(nextIndex) {
     setIndex(nextIndex);
     setRevealed(false);
+    setRated(false);
   }
 
   function changeGroup(groupId) {
@@ -158,8 +184,27 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext, notif
     resetCards();
   }
 
-  function unlockGroup() {
-    if (nextGroup && onUnlockNext()) changeGroup(nextGroup.id);
+  async function requestNextGroup() {
+    if (!nextGroup) return;
+    if (!canManageLessons) {
+      onAdminRequest();
+      return;
+    }
+    if (await onPublishNext()) changeGroup(nextGroup.id);
+  }
+
+  function toggleAnswer() {
+    if (!revealed && !revealedThisVisit.current) {
+      revealedThisVisit.current = true;
+      onRevealKanji(card.character, activeGroup.id);
+    }
+    setRevealed((value) => !value);
+  }
+
+  function rateKanji(rating) {
+    if (rated) return;
+    onRateKanji(card.character, activeGroup.id, rating);
+    setRated(true);
   }
 
   return (
@@ -190,8 +235,10 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext, notif
             <div className="kanji-unlock">
               <p className="hint">{Math.min(unlocked.length, lessonGroups.length)} / {lessonGroups.length} unlocked</p>
               {nextGroup ? (
-                <button type="button" className="btn primary" onClick={unlockGroup}>
-                  {nextGroup.additional ? 'Unlock extras' : 'Unlock next lesson'}
+                <button type="button" className="btn primary" onClick={requestNextGroup}>
+                  {canManageLessons
+                    ? (nextGroup.additional ? 'Publish extras globally' : 'Unlock next lesson globally')
+                    : 'Ask admin to unlock next lesson'}
                 </button>
               ) : (
                 <p className="hint">All lessons unlocked</p>
@@ -223,11 +270,14 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext, notif
                   <div className="kanji-prompt" lang="ja">{card.character}</div>
                   <AudioButtons item={card.audio?.character} label={card.character} onError={notify} />
                 </div>
-                <button type="button" className="btn primary" onClick={() => setRevealed((value) => !value)}>
+                <button type="button" className="btn primary" onClick={toggleAnswer}>
                   {revealed ? 'Hide answer' : 'Show answer'}
                 </button>
                 {revealed && (
                   <div className="kanji-answer">
+                    <p className="kanji-progress-count hint">
+                      Viewed {cardProgress?.views || 0} times · Rated {cardProgress?.n || 0} times
+                    </p>
                     <p className="kanji-meaning">{card.meanings.join(' · ')}</p>
                     <div className="kanji-reading-grid">
                       <ReadingList label="On'yomi" readings={card.on} audio={card.audio?.readings} showRomaji={prefs.romaji} notify={notify} />
@@ -247,6 +297,12 @@ export default function KanjiDeck({ prefs, unlockedGroupIds, onUnlockNext, notif
                           notify={notify}
                         />
                       ))}
+                    </div>
+                    <div className="kanji-rating" role="group" aria-label={`Rate ${card.character}`}>
+                      <span>{rated ? 'Saved for this review.' : 'How well did you know it?'}</span>
+                      <button type="button" className="btn miss" disabled={rated} onClick={() => rateKanji('miss')}>Missed</button>
+                      <button type="button" className="btn" disabled={rated} onClick={() => rateKanji('slow')}>Slow</button>
+                      <button type="button" className="btn primary" disabled={rated} onClick={() => rateKanji('got')}>Got it</button>
                     </div>
                   </div>
                 )}

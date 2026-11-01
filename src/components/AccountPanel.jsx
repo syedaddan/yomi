@@ -3,6 +3,8 @@ import { supabase } from '../supabase.js';
 
 export default function AccountPanel({
   user,
+  profile,
+  onOpenAccount,
   configured,
   authReady,
   syncStatus,
@@ -91,9 +93,17 @@ export default function AccountPanel({
   return (
     <>
       <div className={`account-status${user ? ' is-signed-in' : ''}`}>
-        <button className="account-status-button" type="button" onClick={() => setDialogOpen(true)}>
-          {user ? `Signed in · ${user.email || 'Google account'}` : 'Save progress'}
-        </button>
+        {user ? (
+          <button className="account-avatar-button" type="button" onClick={onOpenAccount} aria-label="Open account page">
+            {profile?.avatarUrl
+              ? <img src={profile.avatarUrl} alt="" className="account-avatar" />
+              : <span className="account-avatar account-avatar-placeholder">{(profile?.display_name || user.email || '?').slice(0, 1).toUpperCase()}</span>}
+          </button>
+        ) : (
+          <button className="account-status-button" type="button" onClick={() => setDialogOpen(true)}>
+            Save progress
+          </button>
+        )}
         {!user && (
           <span className="account-reminder">
             Rated progress stays on this device. Your current drill round resets on refresh. Register or sign in to sync progress and carry new work between devices.
@@ -141,6 +151,10 @@ export default function AccountPanel({
                     <button className="btn" type="button" onClick={onRetrySync}>Retry sync</button>
                   </div>
                 )}
+                <button className="btn primary account-action" type="button" onClick={() => {
+                  setDialogOpen(false);
+                  onOpenAccount();
+                }}>Open account page</button>
                 <button className="btn account-action" type="button" disabled={busy} onClick={signOut}>Sign out</button>
               </>
             ) : (
