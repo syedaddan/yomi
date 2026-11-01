@@ -35,7 +35,10 @@ KATA = [
  ("Home & Clothes", "ベッド bed|テーブル table|ドア door|カーテン curtain|ノート notebook|ペン pen|ズボン trousers|スカート skirt|ネクタイ necktie|ハンカチ handkerchief|タオル towel|ティッシュ tissue|コップ cup|スプーン spoon|フォーク fork|ナイフ knife|バッグ bag|ポケット pocket|ベルト belt|セーター sweater|コート coat|ストーブ heater|エアコン air conditioner|ライト light|ランプ lamp"),
  ("School & Fun", "クラス class|アルバイト part-time job|スポーツ sports|サッカー soccer|テニス tennis|ニュース news|ドラマ drama|アニメ anime|マンガ manga|ギター guitar|ピアノ piano|ペット pet|レポート report|ゴルフ golf|ジム gym|スキー skiing|ダンス dance|カラオケ karaoke|コンサート concert|パーティー party|ミーティング meeting|プロジェクト project|チーム team|ルール rule"),
  ("Look-alikes (シ ツ ソ ン)", "シャツ shirt|ツアー tour|ソース sauce|ソファー sofa|ツナ tuna|シンプル simple|ソーダ soda|ソックス socks|シーツ bed sheet|パンツ pants|ツイン twin|スーツ suit|ソフトクリーム soft serve|シンガポール Singapore|ホットドッグ hot dog|ジャンプ jump|ランチ lunch|ミント mint"),
+ ("Health", "コロナウイルス coronavirus|インフルエンザ influenza|アレルギー allergy"),
+ ("Tech", "シミュレーション simulation|スケジュール schedule"),
 ]
+KATA_NO_ACCENT = {"コロナウイルス"}
 kata_rows, kata_drops, seen = [], [], set()
 for theme, blob in KATA:
     for item in blob.split("|"):
@@ -43,8 +46,8 @@ for theme, blob in KATA:
         if w in seen: continue
         seen.add(w)
         a = [x for (r, x) in acc.get(w, []) if r == ""]
-        if not a: kata_drops.append(w); continue
-        kata_rows.append(dict(kana=w, en=en, theme=theme, accent=a[0]))
+        if not a and w not in KATA_NO_ACCENT: kata_drops.append(w); continue
+        kata_rows.append(dict(kana=w, en=en, theme=theme, accent=a[0] if a else ""))
 
 # ---------- hiragana deck (male = Tokyo-accent clips only) ----------
 hira = json.load(open(HIRA_JSON, encoding="utf-8"))

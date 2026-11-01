@@ -1636,5 +1636,104 @@
 "file": "赤い【あかい】.mp3",
 "accent": "0",
 "f0": 238.80597014925374
+},
+{
+"hw": "宿泊",
+"rd": "しゅくはく",
+"en": "lodging / accommodation",
+"th": "Travel",
+"file": "宿泊【しゅくはく】.mp3",
+"accent": "0",
+"f0": 239.04
+},
+{
+"hw": "救急車",
+"rd": "きゅうきゅうしゃ",
+"en": "ambulance",
+"th": "Health",
+"file": "救急車【きゅうきゅうしゃ】.mp3",
+"accent": "3",
+"f0": 226.15
+},
+{
+"hw": "留学生",
+"rd": "りゅうがくせい",
+"en": "international student",
+"th": "People",
+"file": "留学生【りゅうがくせい】.mp3",
+"accent": "3,4",
+"f0": 221.05
+},
+{
+"hw": "疲れる",
+"rd": "つかれる",
+"en": "to get tired",
+"th": "Health",
+"file": "疲れる【つかれる】.mp3",
+"accent": "3",
+"f0": 254.92
+},
+{
+"hw": "病気",
+"rd": "びょうき",
+"en": "illness / sickness",
+"th": "Health",
+"file": "病気【びょうき】.mp3",
+"accent": "0",
+"f0": 113.95
+},
+{
+"hw": "発音",
+"rd": "はつおん",
+"en": "pronunciation",
+"th": "Learning",
+"file": "発音【はつおん】.mp3",
+"accent": "0",
+"f0": 122.5
+},
+{
+"hw": "経験",
+"rd": "けいけん",
+"en": "experience",
+"th": "Learning",
+"file": "経験【けいけん】.mp3",
+"accent": "0",
+"f0": 246.37
+},
+{
+"hw": "準備",
+"rd": "じゅんび",
+"en": "preparation",
+"th": "Daily Life",
+"file": "準備【じゅんび】.mp3",
+"accent": "1",
+"f0": 221.61
+},
+{
+"hw": "失敗",
+"rd": "しっぱい",
+"en": "mistake / failure",
+"th": "Daily Life",
+"file": "失敗【しっぱい】.mp3",
+"accent": "0",
+"f0": 254.91
+},
+{
+"hw": "旅行",
+"rd": "りょこう",
+"en": "trip / travel",
+"th": "Travel",
+"file": "旅行【りょこう】.mp3",
+"accent": "0",
+"f0": 130.86
+},
+{
+"hw": "練習",
+"rd": "れんしゅう",
+"en": "practice",
+"th": "Learning",
+"file": "練習【れんしゅう】.mp3",
+"accent": "0",
+"f0": 247.75
 }
 ]

@@ -82,4 +82,11 @@ HIRA = [
  ("多い","おおい","many","Adjectives"),("少ない","すくない","few","Adjectives"),("早い","はやい","early / fast","Adjectives"),
  ("長い","ながい","long","Adjectives"),("短い","みじかい","short","Adjectives"),("強い","つよい","strong","Adjectives"),
  ("白い","しろい","white","Adjectives"),("黒い","くろい","black","Adjectives"),("赤い","あかい","red","Adjectives"),
+ # useful words with long vowels, contracted sounds, and double consonants
+ ("宿泊","しゅくはく","lodging / accommodation","Travel"),("救急車","きゅうきゅうしゃ","ambulance","Health"),
+ ("留学生","りゅうがくせい","international student","People"),("疲れる","つかれる","to get tired","Health"),
+ ("病気","びょうき","illness / sickness","Health"),("発音","はつおん","pronunciation","Learning"),
+ ("経験","けいけん","experience","Learning"),("準備","じゅんび","preparation","Daily Life"),
+ ("失敗","しっぱい","mistake / failure","Daily Life"),("旅行","りょこう","trip / travel","Travel"),
+ ("練習","れんしゅう","practice","Learning"),
 ]

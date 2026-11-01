@@ -20,6 +20,7 @@ test('reads pitch accent patterns and multiple dictionary accents', () => {
   assert.deepEqual(particlePitch(1, 3), ['L']);
   assert.deepEqual(accentList('(名)2,(感)4,0'), [2, 4, 0]);
   assert.deepEqual(accentList('0,2'), [0, 2]);
+  assert.deepEqual(accentList(''), []);
   assert.deepEqual(particlePitch(2, 0), ['H', 'H']);
 });
 

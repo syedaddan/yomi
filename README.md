@@ -111,8 +111,8 @@ yomi/
 ## 5. What was done, with measurements (be honest about quality)
 
 1. **Resources searched**: Tofugu/WaniKani vocabulary audio (CC BY-SA 4.0), Kanjium pitch accent dictionary, VOICEVOX, Kokoro, Forvo/NHK (not usable offline/licensing).
-2. **Hiragana deck**: 182 common words matched to Tofugu clips. Human recordings are used where available; alternate clips are kept when present.
-3. **Katakana deck** (164 words) and **phrase deck** (40 phrases): Kanjium accents; ます/ました/ません endings use the standard rule (`src: 'rule'`); the user's own name has no pitch (`NO_PITCH`). Four phrases have a human clip; the remaining phrases and Katakana items use female VOICEVOX.
+2. **Hiragana deck**: 193 common words matched to Tofugu clips. Human recordings are used where available; alternate clips are kept when present.
+3. **Katakana deck** (169 words) and **phrase deck** (40 phrases): Kanjium accents where available; ます/ました/ません endings use the standard rule (`src: 'rule'`); the user's own name has no pitch (`NO_PITCH`). Four phrases have a human clip; Katakana items use female VOICEVOX.
 4. **Pitch QA by F0 tracking** (autocorrelation per mora segment), agreement with the dictionary accent:
    - Kokoro voices 36-64% → rejected (not controllable).
    - **VOICEVOX 九州そら (female, style 16): 81%** (94/116 sampled). Used for female. Other female candidates on the same test: もち子さん 79%, 冥鳴ひまり 70%, 四国めたん 69%, 春日部つむぎ 62%.
@@ -164,13 +164,13 @@ python3 tts/gen_female.py     # female bundle + ttsF/tlF/tendF
 ```
 Check each script's header for exact arguments; they use `ROOT`-relative paths, so run them from anywhere.
 
-To add words from the site, run the local VOICEVOX Engine with browser CORS enabled (for example, `run.exe --cors_policy_mode all` on Windows), then open the **Add words** section. The engine is only contacted for local synthesis; the saved vocabulary and audio stay in the current browser.
+Curated deck audio is generated into `out/audio/female_voice.mp3` before building and ships with the static site; the hosted site does not need a running VOICEVOX engine for its built-in words. To add personal words from the site, run the local VOICEVOX Engine with browser CORS enabled (for example, `run.exe --cors_policy_mode all` on Windows), then open the **Add words** section. Those words and recordings stay in that browser.
 
 ## 8. Known limitations
 
 - Pitch is not verified by a human. ~80% agreement with the dictionary for the synthetic voices, ~73% for the real recordings (speaker accent differs from the dictionary at times). Dictionary accents themselves vary by dialect and by compound/phrase context.
 - Within phrases each chunk uses its own dictionary pitch; real speech shifts pitch across chunks. A visible note says so.
-- 56 hiragana words and 36 of 40 phrases have no real Tokyo-accent recording. Katakana has none. These use VOICEVOX.
+- 64 hiragana words and 36 of 40 phrases have no real Tokyo-accent recording. Katakana has none. These use VOICEVOX.
 - No microphone / pronunciation scoring yet (the "accuracy" goal is only listening + marks so far).
 - No kanji. No furigana. Stats are per browser (`localStorage`), no sync or export.
 - Progress and preferences stay in this browser's `localStorage`; they do not sync to other devices.
