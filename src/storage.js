@@ -1,6 +1,10 @@
 // Keep this key stable so existing local progress survives the brand rename.
 export const STORAGE_KEY = 'yomi-drill-v1';
 
+export function userStorageKey(userId) {
+  return `${STORAGE_KEY}:user:${userId}`;
+}
+
 export const DEFAULT_PREFS = {
   romaji: true,
   marks: true,
@@ -19,24 +23,40 @@ export const DEFAULT_PREFS = {
   voice: 'female',
 };
 
-export function loadStore() {
-  const empty = { stats: {}, sprints: [], conf: {}, prefs: {}, customItems: [] };
+export function emptyStore() {
+  return { stats: {}, sprints: [], conf: {}, prefs: {}, customItems: [] };
+}
+
+export function normalizeStore(saved) {
+  const empty = emptyStore();
+  if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return empty;
+  const prefs = saved.prefs && typeof saved.prefs === 'object' ? saved.prefs : {};
+  return {
+    ...empty,
+    ...saved,
+    stats: saved.stats && typeof saved.stats === 'object' && !Array.isArray(saved.stats) ? saved.stats : {},
+    sprints: Array.isArray(saved.sprints) ? saved.sprints : [],
+    conf: saved.conf && typeof saved.conf === 'object' && !Array.isArray(saved.conf) ? saved.conf : {},
+    prefs: { ...prefs, ...(prefs.voice === 'male' ? { voice: 'recording' } : {}) },
+    customItems: Array.isArray(saved.customItems) ? saved.customItems : [],
+  };
+}
+
+export function hasStoredStore(key = STORAGE_KEY) {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-    if (!saved || typeof saved !== 'object') return empty;
-    const prefs = saved.prefs && typeof saved.prefs === 'object' ? saved.prefs : {};
-    return {
-      ...empty,
-      ...saved,
-      stats: saved.stats && typeof saved.stats === 'object' ? saved.stats : {},
-      sprints: Array.isArray(saved.sprints) ? saved.sprints : [],
-      conf: saved.conf && typeof saved.conf === 'object' ? saved.conf : {},
-      prefs: { ...prefs, ...(prefs.voice === 'male' ? { voice: 'recording' } : {}) },
-      customItems: Array.isArray(saved.customItems) ? saved.customItems : [],
-    };
+    return localStorage.getItem(key) !== null;
+  } catch {
+    return false;
+  }
+}
+
+export function loadStore(key = STORAGE_KEY) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) || 'null');
+    return normalizeStore(saved);
   } catch (error) {
     console.warn('Could not load saved Yomi progress; starting with empty progress.', error);
-    return empty;
+    return emptyStore();
   }
 }
 
@@ -70,9 +90,9 @@ export function unlockNextKanjiGroup(savedGroupIds, groups) {
   return unlocked;
 }
 
-export function saveStore(store) {
+export function saveStore(store, key = STORAGE_KEY) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    localStorage.setItem(key, JSON.stringify(store));
   } catch (error) {
     console.warn('Could not save Yomi progress in this browser.', error);
     return false;

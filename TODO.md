@@ -5,7 +5,7 @@ Priorities are ordered. The first item remains the active priority; completed wo
 ## Current priorities
 
 - [x] **Kanji deck**: add furigana and Romaji controls, on/kun readings, pitched examples, sequential unlocks for the ordered lesson groups, and natural-first audio for every kanji, reading, and example sentence; use KANJIDIC2 / Kanjium and include source/license credits. Resize practice panels consistently across tabs.
-- [ ] **Accounts and cloud-backed user data**: add sign-in, replace browser/session-dependent storage with a database for user details and progress, and cloud file storage for custom-word audio so it persists across sessions and devices.
+- [ ] **Accounts and cloud-backed user data**: add Google and passwordless email sign-in; keep local use available with an initial registration prompt and persistent reminder; sync progress/preferences/custom words/audio through Supabase; offer an explicit one-time local-data transfer or merge on sign-in.
 - [x] **Expand the Hiragana and Katakana decks** with more useful and difficult-to-pronounce words, including コロナウイルス. Look for an appropriately licensed human recording first, and generate a female VOICEVOX recording for every added item regardless of whether a human recording is found.
 - [x] **Add a word-entry page** for Hiragana and Katakana. Let learners enter a kana word, English meaning, theme, pitch accent (with an unknown option), and human-recording source/audio. Require a human-recording search before saving, and always generate female VOICEVOX audio.
 - [x] **Remove male VOICEVOX audio** from the app and generated data. Keep human recordings, including male recordings, when available; use the female VOICEVOX voice as the synthetic option.

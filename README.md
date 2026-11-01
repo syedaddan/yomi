@@ -3,7 +3,7 @@
 A small React Japanese **reading trainer** for hiragana, katakana, and beginner kanji.
 Built for a learner who is preparing for class reading tests and wants to stop decoding character by character.
 
-The app is a small React site built with Vite. The study site is static and needs no account or backend. The Add words page uses a local VOICEVOX Engine on your own computer when you create a word. The illustrated Yomi mark is also used as the site favicon; audio and data credits are available from the information button beside the logo. Pages use extensionless paths, with Drill at the site root.
+The app is a small React site built with Vite and can be hosted on GitHub Pages. Local study remains available without an account; optional Supabase accounts sync progress and custom-word audio between devices. The Add words page uses a local VOICEVOX Engine on your own computer when you create a word. The illustrated Yomi mark is also used as the site favicon; audio and data credits are available from the information button beside the logo. Pages use extensionless paths, with Drill at the site root.
 
 ---
 
@@ -92,7 +92,7 @@ yomi/
 - **React** renders the app and keeps interface state in components. Sections use client-side extensionless paths (`/`, `/pacer`, `/alike`, `/add`, `/progress`, `/kanji`), so navigation switches the active React view without reloading the document or exposing `.html` routes. Browser back/forward works normally, and the GitHub Pages fallback supports direct visits and refreshes on section paths.
 - **Vite** is the local development server and production builder; it bundles the React code into regular static HTML, CSS, and JavaScript. GitHub Pages serves the single app entry; Vite does not run on the hosted site.
 - The compact top bar holds the centered Yomi brand and section navigation. A fixed two-row bottom settings dock is available throughout the app: display toggles and Drill reading mode are on the first row, and deck/theme/study controls are on the second. Large option lists open into small panels; selected Drill themes stay visible as removable chips with a selected/available count. Each row has its own reset action; resets restore preferences without deleting study progress.
-- Custom words are stored per browser: metadata in `localStorage`, generated and optional human audio in IndexedDB. They are added to the selected deck and are not automatically published to the shared GitHub Pages dataset.
+- Without an account, progress and custom words remain local to the browser. After sign-in, progress syncs to a user-owned Supabase row and custom audio to private user storage; local copies are retained.
 - To create a custom word, search for a human recording first, provide its source if found, then generate a female VOICEVOX clip. The page requires the VOICEVOX Engine at `127.0.0.1:50021` with browser CORS enabled. If no human recording is found, the female clip is still generated and used.
 - Deck, mode, script, and audio choices use compact pressed-state buttons rather than radio controls. Voice and audio details are available from keyboard-accessible `i` information buttons.
 - `out/data.json` is imported into the app at build time. Before starting Vite or building, an npm pre-script copies `out/audio/` to the ignored `public/audio/`; Vite then serves and bundles those static audio files.
@@ -114,7 +114,7 @@ yomi/
 - **Audio priority** in the drill: Female VOICEVOX uses the female bundle; Recording uses a human clip when available and otherwise the female bundle. A device voice is only a last resort if a clip cannot be loaded.
 - **Female bundle**: one MP3 fetched lazily on first use and sliced into per-item Blobs. No male VOICEVOX clips are shipped or used.
 - **Pacer clip sync**: the female VOICEVOX clip's per-mora onset timeline drives the highlight from `audio.currentTime`; playback rate is clamped to 0.5-2.
-- Preferences and stats live in `localStorage` (per browser). Wrapped in try/catch.
+- Preferences and stats are retained in `localStorage` for local-first use and synced to Supabase when signed in.
 
 ## 5. What was done, with measurements (be honest about quality)
 
@@ -153,6 +153,15 @@ npm run preview
 
 To publish with GitHub Pages, push to the `main` or `master` branch. The workflow in `.github/workflows/pages.yml` builds the site and publishes `dist/`. The first time, open the repository's **Settings → Pages → Build and deployment** and select **GitHub Actions** as the source. The build automatically uses the repository name as the Pages path, so the app and its audio work when hosted under `username.github.io/repository/`.
 
+### Optional Supabase accounts and sync
+
+1. Create a Supabase project and run [`supabase/migrations/202611020001_user_data.sql`](./supabase/migrations/202611020001_user_data.sql) in its SQL editor.
+2. In Supabase Authentication, enable Google and email OTP (magic links). Add the local and deployed Yomi URLs to the allowed redirect URLs. Configure the Google OAuth client in Supabase; no Google client secret belongs in this repository.
+3. Copy `.env.example` to `.env.local` for local development and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` using the project URL and public anon/publishable key.
+4. Add those same values as GitHub Actions repository variables named `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` so the Pages build enables accounts. These browser values are public; database and storage access is protected by the migration's row-level security policies.
+
+On first visit, learners can register/sign in with Google or an emailed sign-in link, or continue locally. On sign-in, Yomi offers an explicit transfer/merge or cloud-data choice when the device and account differ. Custom recordings are uploaded to the user's private storage area.
+
 Optional browser tests use Playwright. Start `npm run dev` in one terminal, install Playwright and Chromium once (`pip install playwright` and `playwright install chromium`), then run `python tests/smoke.py`, `python tests/pace_test.py`, `python tests/clip_test.py`, or `python tests/nav_test.py` in another terminal.
 
 ## 7. Regenerating data and audio (only if you change decks)
@@ -178,7 +187,7 @@ python3 build/kanji_deck.py <kanjidic2.xml.gz> <accents.txt> <jukugo.txt> out/ka
 ```
 The ordered groups and original presentation filenames are recorded in `build/kanji_groups.json`. The first filename names the range 1–10, represented as 一 through 十. The filenames identify 272 unique characters; slide contents were not inspected, so characters shown only inside slides are not included. The final extra group preserves 立 and 耳 from the earlier deck.
 
-Run `python3 tts/import_tatoeba.py` to add sourced sentences and translations with their Tatoeba credits, plus natural recordings explicitly licensed CC BY 4.0 or CC BY-NC 4.0. The deck stores per-sentence, translation, and audio credits; CC BY-NC recordings are for non-commercial use only. Then run `python3 tts/gen_kanji.py` with the local VOICEVOX Engine available at `127.0.0.1:50021` to synthesize every kanji, reading, and sentence. Install `imageio-ffmpeg` if FFmpeg is not on PATH. The generated `out/audio/kanji_voice.mp3` and Tatoeba recordings ship with the static site. To add personal words from the site, run the local VOICEVOX Engine with browser CORS enabled (for example, `run.exe --cors_policy_mode all` on Windows), then open the **Add words** section. Those words and recordings stay in that browser.
+Run `python3 tts/import_tatoeba.py` to add sourced sentences and translations with their Tatoeba credits, plus natural recordings explicitly licensed CC BY 4.0 or CC BY-NC 4.0. The deck stores per-sentence, translation, and audio credits; CC BY-NC recordings are for non-commercial use only. Then run `python3 tts/gen_kanji.py` with the local VOICEVOX Engine available at `127.0.0.1:50021` to synthesize every kanji, reading, and sentence. Install `imageio-ffmpeg` if FFmpeg is not on PATH. The generated `out/audio/kanji_voice.mp3` and Tatoeba recordings ship with the static site. To add personal words from the site, run the local VOICEVOX Engine with browser CORS enabled (for example, `run.exe --cors_policy_mode all` on Windows), then open the **Add words** section. Without an account, personal words and recordings stay in that browser; signed-in users can sync them to their account.
 
 ## 8. Known limitations
 
@@ -187,7 +196,7 @@ Run `python3 tts/import_tatoeba.py` to add sourced sentences and translations wi
 - 64 hiragana words and 36 of 40 phrases have no real Tokyo-accent recording. Katakana has none. These use VOICEVOX.
 - No microphone / pronunciation scoring yet (the "accuracy" goal is only listening + marks so far).
 - Kanji practice is separate from the kana drill. Group unlocks are saved per browser (`localStorage`), but card-level study progress does not sync or export. The filename-derived list has 272 unique characters (plus two preserved from the previous deck), fewer than the approximately 450 estimated from the full slide contents; characters not present in filenames are not included.
-- Progress and preferences stay in this browser's `localStorage`; they do not sync to other devices.
+- Without signing in, progress and preferences stay in this browser's `localStorage`; account sync requires configuring Supabase as described above.
 - The GitHub Pages study site needs an internet connection for Google Fonts and the first lazy load of the bundled female voice. Adding words also requires a locally running VOICEVOX Engine.
 
 ## 9. Roadmap
