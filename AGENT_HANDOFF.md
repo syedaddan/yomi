@@ -1,73 +1,134 @@
 # Yomi agent handoff
 
-This file is the durable pickup point for another coding agent. Read it before continuing, then inspect `git status`, `git log`, and the referenced source files; the repository state is authoritative if this document and code differ.
+This is the detailed pickup document for a fresh coding agent. Read it first, then inspect the repository state and cited files before continuing. Git and source code are authoritative if they differ from this note.
 
-## User's latest request
-
-Implement and push these three changes:
-
-1. If a word has a Kansai recording, play it before the Tokyo recording or synthetic voice.
-2. Make Add words synthesis work from the browser without requiring a locally hosted VOICEVOX Engine.
-3. Remove the unused lower row of the Kanji bottom settings dock.
-
-Also update `README.md` and `TODO.md`, and keep this handoff file detailed enough for another LLM agent to continue independently. The user selected browser-native speech synthesis after being told that Japanese voice availability and quality vary by device/browser.
-
-## Project
+## Repository and current state
 
 - Repository: `syedaddan/yomi`
-- App: React + Vite Japanese reading trainer; Supabase for optional accounts, profiles, per-user progress/custom words, and shared admin deck overrides.
-- Windows workspace: `D:\Learning\yomi`
-- Usual verification: `npm test`; `npm run build`.
-- Branch before this task: `main`.
+- Workspace: `D:\Learning\yomi` (Windows)
+- Branch: `main`
+- Latest feature commit: `0598523bc951c07342a5098955c461c4b2fe959c` (`feat: prioritize Kansai and browser speech`)
+- That commit was pushed to `origin main`; at the end of the task `HEAD` and `origin/main` matched.
+- Follow-up handoff expansion is being made after that feature commit. Check `git status` for whether this documentation-only follow-up has been committed/pushed.
+- Commit `0598523` changed 17 tracked paths (233 insertions, 92 deletions). A separate short-lived OS-temp summary was also created during the preceding response; this repository handoff is the detailed, durable source of truth.
+- `supabase/.temp/` is untracked local Supabase CLI metadata. It was generated during CLI usage; do not stage it, inspect it, or remove it.
+- `npm test` and `npm run build` can create/update ignored files under `dist/` and `public/audio/`. They are generated outputs, not source files, and were not included in the feature commit.
 
-## Relevant prior work and deployment state
+## User request and decisions
 
-- Commit `5b390cd` fixed a signed-in Account page render failure by moving the sign-out handler into component scope; added a regression test. The fix is already pushed.
-- Account/profile/progress feature is implemented in commit `4783d58`.
-- Shared admin deck editor is implemented in commit `23b86a1`.
-- The user confirmed they successfully applied Supabase migration 002, then migration 003, and deployed the `delete-account` Edge Function. Do not ask them to rerun those.
-- The new migration 004 in this task is **not yet applied**. It makes `user_custom_words.female_audio_id` nullable so browser-speech words can sync without a generated audio file. Tell the user to run only migration 004 after it has been pushed/deployed.
-- The Supabase CLI created untracked `supabase/.temp/` files locally. Do not inspect or stage them; they are not project deliverables and may contain local CLI metadata.
-- A prior terminal screenshot contained a CLI login URL/code, which the user already used. Never reproduce or include those values.
+The user asked for:
 
-## Current task implementation
+1. Prefer the Kansai dialect recording over Tokyo and synthetic audio whenever a Kansai clip exists.
+2. Remove the Add words page's requirement for a locally hosted VOICEVOX Engine; use an in-browser synthesizer.
+3. Remove the useless lower settings row from Kanji.
+4. Update `README.md` and `TODO.md` as needed.
+5. Create a file detailed enough for another LLM agent to continue, and push all changes to GitHub.
 
-At handoff creation, changes may still be uncommitted. Check `git status` and finish tests, review, commit, and push to `origin main` per the user's explicit request.
+The user selected the browser's built-in Japanese speech synthesis after being informed that availability and quality vary with the user's browser/device. This generates no audio file and needs no hosted service, API key, or local engine.
 
-- `src/audioPriority.js`: centralizes source selection. A present `item.alt` is treated as the Kansai clip and returned first unless the user explicitly requests the alternate voice.
-- `src/audio.js`: plays Kansai as the default primary clip; alternate playback skips it and honors the selected curated/synthetic source. Custom words without saved audio fall through to `speechSynthesis`.
-- `src/audioPriority.test.mjs`: tests Kansai priority, alternate behavior, and browser speech fallback.
-- `src/components/Drill.jsx` and `src/components/shared.jsx`: expose the alternate playback, explain the priority, and describe built-in VOICEVOX vs browser speech accurately.
-- `src/components/AddWords.jsx`: no longer calls `synthesizeFemaleWord` or saves generated synthetic audio. It saves the word and any optional human audio, then uses browser speech at playback time. The user still searches for a natural recording before adding a word. New custom words have an empty `femaleAudioId`.
-- `src/customWords.js` and tests: no longer require a generated audio ID.
-- `src/cloudStore.js` and tests: reconstruct nullable `female_audio_id` as an empty audio ID.
-- `supabase/migrations/202611020004_browser_speech_custom_words.sql`: drops `NOT NULL` from `user_custom_words.female_audio_id`; must be applied on the user's Supabase project for signed-in custom words to sync.
-- `src/components/SettingsBar.jsx`: only renders the settings controls row on pages that use it, removing the lower row from Kanji.
-- `src/accountPage.test.mjs`: combined SSR regressions for signed-in account rendering and the Kanji dock's compact row.
-- `README.md`, `TODO.md`: reflect these changes and migration order.
+## What was implemented
 
-## Validation already run
+### Kansai audio priority
 
-- `npm test`: 33 tests passed.
-- `npm run build`: succeeded. Vite still reports the existing large JavaScript chunk warning (>500 kB).
-- `git diff --check`: passed before the final doc/UI-label adjustment; rerun before commit.
-- Browser smoke check: Kanji dock shows display controls and “Reset all display options”, with no lower controls row. Add words page shows “Add word” and no local-engine requirement. Browser smoke was signed out, so it did not exercise a live Supabase write or actual spoken audio.
+- Added a standalone audio-source resolver so playback source choice can be tested independently of browser audio APIs.
+- If an item has `alt` audio, the normal Play action now plays that clip first. In the deck data, `alt` represents the Kansai alternate.
+- The explicit **Other voice** button requests the non-Kansai choice and follows the selected voice preference: curated recording or synthetic voice.
+- Existing playback behavior remains for items without `alt`: use the selected curated recording/voice; built-in items use the bundled female VOICEVOX clip where available; custom items without stored audio use browser speech.
+- Updated the UI voice button label and recording information to explain the new priority.
 
-## Things to verify before finishing
+### Add words browser speech
 
-1. Run `npm test`, `npm run build`, and `git diff --check` after all edits.
-2. Review the final diff, particularly audio source selection and `README.md` migration instructions. Do not modify already-applied migrations 001–003; migration 004 is additive.
-3. Do not stage `supabase/.temp/`; stage only intentional source/docs/migration files.
-4. Commit with a message matching the repository's `feat:` convention and include the configured Copilot co-author trailer unless repository/user instructions change.
-5. Push to `origin main`; verify `HEAD` equals `origin/main`.
-6. Tell the user to wait for GitHub Pages deployment, then run migration 004 in Supabase SQL Editor. Never ask them to expose credentials.
+- Removed the Add words dependency on `synthesizeFemaleWord`, the local VOICEVOX endpoint, and saving generated synthetic blobs into IndexedDB/private storage.
+- Custom words still require the user to perform the recording search and select whether a natural recording was found. Human recording upload/link support remains.
+- New custom words have an empty `femaleAudioId`; when no saved human audio is selected for playback, the existing `speechSynthesis` fallback uses a Japanese device voice.
+- Missing browser speech support or Japanese voices results in a user-facing error through the existing audio error callback. Voice sound and availability are device/browser-dependent.
+- Account sync needs nullable `user_custom_words.female_audio_id`. Existing migration 002 defined that column `NOT NULL`, so a new additive migration 004 was added. It must be run in Supabase for signed-in users to add/sync custom words without generated audio.
+
+### Kanji settings dock
+
+- The settings dock's second/lower controls row now renders only for pages that use its settings controls. Kanji retains its display row (Romaji, Furigana, Pitch marks, and Reset all display options) without the lower reset/settings row.
+
+### Documentation and handoff
+
+- README and roadmap now describe Kansai-first playback, browser-native speech for custom words, and Kanji dock behavior.
+- README migration order includes migration 004 and notes not to rerun previously applied migrations.
+- This `AGENT_HANDOFF.md` was expanded on the user's follow-up request to include an exact file inventory and all implementation/test/deployment details.
+
+## Exact files changed in feature commit `0598523`
+
+The following 17 tracked paths were committed. There were no other tracked files in that commit.
+
+### Documentation
+
+1. `AGENT_HANDOFF.md` — added durable continuation notes, task decisions, prior Supabase/deployment state, verification evidence, remaining user action, and initial file/change summary. It has since been expanded with this exhaustive inventory.
+2. `README.md` — changed project overview, audio priority and schema descriptions, Add words behavior, Kanji dock layout, Supabase migration sequence, and limitations to reflect browser speech. Local VOICEVOX remains needed for offline audio generation tasks such as building Kanji audio, but not for Add words.
+3. `TODO.md` — marked accounts/cloud sync complete; updated Add words completion criteria; recorded Kansai priority and Kanji dock simplification; recorded the existing admin shared deck catalog feature.
+
+### Build/test configuration
+
+4. `package.json` — added `src/audioPriority.test.mjs` to the `npm test` command. No dependencies were added.
+
+### Audio source selection and playback
+
+5. `src/audioPriority.js` — new pure `resolvePlaybackSource(item, voice, alternate)` helper. It selects Kansai first unless `alternate` is requested, then resolves local human audio, linked human audio, curated deck audio, bundled female audio, or browser speech.
+6. `src/audioPriority.test.mjs` — tests Kansai precedence for both voice preference values, explicit alternate behavior, and custom browser-speech fallback.
+7. `src/audio.js` — delegates source selection to the helper; plays the selected source; routes custom fallback to the existing Web Speech API; reports source-specific playback errors.
+8. `src/components/Drill.jsx` — labels the alternate button **Other voice**; explains Kansai-first playback; adjusts recording help text for custom words and the alternate voice.
+9. `src/components/shared.jsx` — renames the synthetic choice to **Synthetic voice** and updates its explanation for Kansai, bundled VOICEVOX, and browser speech.
+
+### Add words and cloud persistence
+
+10. `src/components/AddWords.jsx` — removed local VOICEVOX synthesis and generated female-clip persistence; now creates a custom word without a generated audio ID, still persists optional human audio, and explains browser speech and device-dependent voice quality. Submit button now says **Add word**.
+11. `src/customWords.js` — no longer requires `femaleAudioId`; normalizes a missing ID to an empty string while retaining existing kana, meaning, theme, accent, and secure-URL validation.
+12. `src/customWords.test.mjs` — changed custom word expectations to cover words without generated audio; retained script, pitch, and HTTPS validation coverage.
+13. `src/cloudStore.js` — maps a null database `female_audio_id` to `''` when reconstructing custom word records.
+14. `src/cloudStore.test.mjs` — asserts existing audio IDs still restore and null audio IDs restore as empty strings for browser-speech words.
+15. `supabase/migrations/202611020004_browser_speech_custom_words.sql` — additive one-statement migration dropping `NOT NULL` from `public.user_custom_words.female_audio_id`.
+
+### Kanji/account regression tests
+
+16. `src/components/SettingsBar.jsx` — only renders `.settings-controls-row` when `showSettingsControls` is true; Kanji still renders its display row but not the unused lower row.
+17. `src/accountPage.test.mjs` — extended the signed-in account server-render test to also verify that Kanji retains Furigana but omits the lower `.settings-controls-row` and its “Reset all settings” action.
+
+The expanded handoff itself is a follow-up documentation change, separate from those 17 paths. No other tracked source file was changed for the follow-up.
+
+## Prior relevant commits and confirmed setup
+
+- `4783d58`: private profiles, structured progress, admin Kanji lesson availability, and account deletion support.
+- `23b86a1`: admin-only shared Decks tab and per-user custom-word organization.
+- `5b390cd`: fixed signed-in Account page render error and added regression coverage.
+- User confirmed Supabase migration 002 succeeded, migration 003 succeeded, and `delete-account` Edge Function deployed. Do not instruct the user to rerun these.
+- Migration 004 has not been applied (unless the user reports doing so after this handoff). In Supabase SQL Editor, the user should run only `supabase/migrations/202611020004_browser_speech_custom_words.sql`. It is independent/additive and does not change RLS policies.
+- The Supabase CLI produced `supabase/.temp/`; keep it untracked and do not stage it.
+- Never include credentials, CLI login URLs/codes, database passwords, API keys, or service-role keys. A previous screenshot included an already-used one-time CLI login link/code; do not repeat it.
+
+## Verification completed for commit `0598523`
+
+- `npm test`: 33 tests passed, zero failed.
+- `npm run build`: succeeded. Existing warning remains: minified JS chunk is over 500 kB.
+- `git diff --check`: passed before commit.
+- Browser smoke check on local Vite:
+  - `/kanji` showed display controls and **Reset all display options**, without the lower settings row.
+  - `/add` showed **Add word**, “Speech is built into your browser”, and did not mention local Engine port `127.0.0.1:50021`.
+  - This was a signed-out smoke test: no live Supabase custom-word save/sync was tested, and actual speech audio playback/device voice availability was not tested.
+- Push verification: `HEAD` and `origin/main` matched at `0598523bc951c07342a5098955c461c4b2fe959c`.
+
+## Recommended next actions
+
+1. Check `git status`, `git log`, and this file; determine whether the handoff expansion is still uncommitted.
+2. If continuing code work, run `npm test`, `npm run build`, and `git diff --check`.
+3. If committing the handoff expansion, stage only `AGENT_HANDOFF.md`, do not stage `supabase/.temp/`, then push to `origin main` and verify the remote hash.
+4. Remind the user to wait for GitHub Pages deployment, then apply only migration 004 in Supabase SQL Editor if they want cloud sync for custom words with no generated audio. Do not ask them to rerun migrations 002/003.
+5. If testing user-facing speech, use a browser/device with a Japanese speech voice and verify both a custom word with no recording (browser speech) and a word with an uploaded natural recording. Never test account deletion on an account whose data should be retained.
 
 ## Suggested skills
 
-- `tdd` if continuing test-first changes.
-- `diagnose` if the browser reports a regression.
-- `code-review` if the user later requests a review.
+- `tdd` for test-first follow-up work.
+- `diagnose` if a specific runtime issue is reported.
+- `code-review` if the user requests review.
 
-## Security and privacy
+## Safety and privacy notes
 
-No Supabase credentials, tokens, database passwords, service-role keys, or login links belong in this document or source. The admin identity is intentionally not repeated here. RLS and admin policies are in the existing migrations; do not weaken them.
+- Keep all account/profile/progress/deck authorization protections and RLS policies intact.
+- Do not add a remote TTS service or expose secrets unless the user explicitly changes the browser-native speech decision.
+- Do not include personal email addresses, credentials, login links, or tokens in future handoffs.
