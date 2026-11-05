@@ -18,6 +18,18 @@ export default function AccountPanel({
   onRetrySync,
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [theme, setTheme] = useState(() => (typeof document !== 'undefined' ? document.documentElement.getAttribute('data-theme') : null) || 'auto');
+
+  function cycleTheme() {
+    const next = theme === 'auto' ? 'dark' : theme === 'dark' ? 'light' : 'auto';
+    setTheme(next);
+    if (next === 'auto') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', next);
+    }
+    try { localStorage.setItem('yomi-theme', next); } catch {}
+  }
   const [promptDismissed, setPromptDismissed] = useState(() => {
     try { return sessionStorage.getItem('yomi-sign-in-seen') === '1'; } catch { return false; }
   });
@@ -96,17 +108,28 @@ export default function AccountPanel({
   return (
     <>
       <div className={`account-status${user ? ' is-signed-in' : ''}`}>
-        {user ? (
-          <button className="account-avatar-button" type="button" onClick={onOpenAccount} aria-label="Open account page">
-            {profile?.avatarUrl
-              ? <img src={profile.avatarUrl} alt="" className="account-avatar" />
-              : <span className="account-avatar account-avatar-placeholder">{(profile?.display_name || user.email || '?').slice(0, 1).toUpperCase()}</span>}
+        <div className="account-pill">
+          <button
+            className="theme-toggle-header"
+            type="button"
+            aria-label={`Theme: ${theme === 'auto' ? 'Auto' : theme === 'dark' ? 'Dark' : 'Light'}`}
+            title={`Theme: ${theme === 'auto' ? 'Auto (follows system)' : theme === 'dark' ? 'Dark — click for Light' : 'Light — click for Auto'}`}
+            onClick={cycleTheme}
+          >
+            {theme === 'dark' ? '🌙' : theme === 'light' ? '☀️' : '🌓'}
           </button>
-        ) : (
-          <button className="account-status-button" type="button" onClick={() => setDialogOpen(true)}>
-            Save progress
-          </button>
-        )}
+          {user ? (
+            <button className="account-avatar-button" type="button" onClick={onOpenAccount} aria-label="Open account page">
+              {profile?.avatarUrl
+                ? <img src={profile.avatarUrl} alt="" className="account-avatar" />
+                : <span className="account-avatar account-avatar-placeholder">{(profile?.display_name || user.email || '?').slice(0, 1).toUpperCase()}</span>}
+            </button>
+          ) : (
+            <button className="account-status-button" type="button" onClick={() => setDialogOpen(true)}>
+              Save progress
+            </button>
+          )}
+        </div>
         {!user && (
           <span className="account-reminder">
             Rated progress stays on this device. Your current drill round resets on refresh. Register or sign in to sync progress and carry new work between devices.

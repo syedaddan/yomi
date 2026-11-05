@@ -90,3 +90,14 @@ export async function publishNextKanjiLesson(unlockedCount) {
     .single();
   return requireData(result, 'Could not unlock the next Kanji lesson').unlocked_count;
 }
+
+export async function lockLastKanjiLesson(unlockedCount) {
+  const next = Math.max(1, unlockedCount - 1);
+  const result = await supabase
+    .from('kanji_catalog_settings')
+    .update({ unlocked_count: next })
+    .eq('singleton', true)
+    .select('unlocked_count')
+    .single();
+  return requireData(result, 'Could not lock the last Kanji lesson').unlocked_count;
+}

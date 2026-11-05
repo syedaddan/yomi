@@ -65,21 +65,23 @@ function ToggleSetting({ label, pressed, onClick, info, id }) {
   );
 }
 
-export default function SettingsBar({ page, prefs, setPreference, resetSection, resetAll, onDrillReset, notify, customItems = [], items = ITEMS }) {
+export default function SettingsBar({
+  page,
+  prefs,
+  setPreference,
+  resetSection,
+  resetAll,
+  onDrillReset,
+  notify,
+  customItems = [],
+  items = ITEMS,
+  kanjiGroups = [],
+  kanjiUnlockedCount = 1,
+  selectedKanjiGroupId = '',
+  onChangeKanjiGroup,
+}) {
   const [openSection, setOpenSection] = useState('');
-  const [theme, setTheme] = useState(() => (typeof document !== 'undefined' ? document.documentElement.getAttribute('data-theme') : null) || 'auto');
   const bar = useRef(null);
-
-  function cycleTheme() {
-    const next = theme === 'auto' ? 'dark' : theme === 'dark' ? 'light' : 'auto';
-    setTheme(next);
-    if (next === 'auto') {
-      document.documentElement.removeAttribute('data-theme');
-    } else {
-      document.documentElement.setAttribute('data-theme', next);
-    }
-    try { localStorage.setItem('yomi-theme', next); } catch {}
-  }
   const allItems = useMemo(() => [...items, ...customItems], [items, customItems]);
   const deckThemes = useMemo(() => [...new Set(allItems.map((item) => `${item.deck}|${item.theme}`))], [allItems]);
   const themeNames = useMemo(() => {
@@ -92,6 +94,11 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
   }, [deckThemes]);
   const selectedThemes = prefs.themes.filter((key) => deckThemes.includes(key));
   const availableThemes = deckThemes.filter((key) => !selectedThemes.includes(key));
+  const activeKanjiGroup = (kanjiGroups || []).find((g) => g.id === selectedKanjiGroupId)
+    || (kanjiGroups || [])[Math.min(kanjiUnlockedCount - 1, Math.max(0, (kanjiGroups || []).length - 1))];
+  const activeLessonLabel = activeKanjiGroup
+    ? (activeKanjiGroup.additional ? 'Extras' : `Lesson ${(kanjiGroups || []).indexOf(activeKanjiGroup) + 1}`)
+    : 'Lesson 1';
   const phraseItems = items.filter((item) => item.deck === 'phr');
   const phraseThemes = [...new Set(phraseItems.map((phrase) => phrase.theme))];
   const phrases = phraseItems.filter((phrase) => !prefs.paceTheme || phrase.theme === prefs.paceTheme);
@@ -174,14 +181,56 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
               <div className="display-control">
                 <button className="choice-button" type="button" aria-pressed={prefs.romaji} onClick={() => setPreference('romaji', !prefs.romaji)}>Romaji</button>
                 <InfoButton label="Romaji information">Show or hide the Latin-letter reading alongside Japanese text.</InfoButton>
-                {page === 'kanji' && (
-                  <button className="choice-button" type="button" aria-pressed={prefs.furigana} onClick={() => setPreference('furigana', !prefs.furigana)}>Furigana</button>
-                )}
               </div>
+              {page === 'kanji' && (
+                <div className="display-control">
+                  <button className="choice-button" type="button" aria-pressed={prefs.furigana} onClick={() => setPreference('furigana', !prefs.furigana)}>Furigana</button>
+                  <InfoButton label="Furigana information">Show or hide phonetic kana readings above kanji characters.</InfoButton>
+                </div>
+              )}
               {page !== 'pacer' && (
                 <div className="display-control">
                   <button className="choice-button" type="button" aria-pressed={prefs.marks} onClick={() => setPreference('marks', !prefs.marks)}>Pitch marks</button>
                   <InfoButton label="Pitch marks information">Show or hide the high/low pitch marks on readings.</InfoButton>
+                </div>
+              )}
+              {page === 'kanji' && (
+                <div className="display-control">
+                  <SettingPanel
+                    id="kanji-lesson"
+                    label="Lesson"
+                    summary={activeLessonLabel}
+                    open={openSection === 'kanji-lesson'}
+                    onToggle={() => toggleSection('kanji-lesson')}
+                  >
+                    <div className="choice-group compact theme-options" role="group" aria-label="Kanji lessons">
+                      {kanjiGroups.map((group, groupIndex) => {
+                        const isUnlocked = groupIndex < kanjiUnlockedCount;
+                        const isSelected = group.id === selectedKanjiGroupId || (!selectedKanjiGroupId && groupIndex === Math.min(kanjiUnlockedCount - 1, kanjiGroups.length - 1));
+                        const label = group.additional ? 'Extras' : `Lesson ${groupIndex + 1}`;
+                        return (
+                          <button
+                            key={group.id}
+                            className="choice-button"
+                            type="button"
+                            aria-pressed={isSelected}
+                            disabled={!isUnlocked}
+                            onClick={() => {
+                              if (isUnlocked && onChangeKanjiGroup) {
+                                onChangeKanjiGroup(group.id);
+                                setOpenSection('');
+                              }
+                            }}
+                          >
+                            {label} {!isUnlocked ? '🔒' : ''}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </SettingPanel>
+                  <InfoButton label="Lesson unlock information">
+                    Kanji lesson unlocks and locks are controlled globally by the admin in the Decks tab.
+                  </InfoButton>
                 </div>
               )}
               {page === 'drill' && (
@@ -193,13 +242,6 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
                 />
               )}
             </div>
-            <button
-              className="theme-toggle"
-              type="button"
-              aria-label={`Theme: ${theme === 'auto' ? 'Auto' : theme === 'dark' ? 'Dark' : 'Light'}`}
-              title={`Theme: ${theme === 'auto' ? 'Auto (follows system)' : theme === 'dark' ? 'Dark — click for Light' : 'Light — click for Auto'}`}
-              onClick={cycleTheme}
-            >{theme === 'dark' ? '🌙' : theme === 'light' ? '☀️' : '🌓'}</button>
             <button
               className="reset-all"
               type="button"

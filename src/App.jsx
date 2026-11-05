@@ -15,6 +15,7 @@ import { applyDeckOverrides } from './deckCatalog.js';
 import { readDeckCatalog, removeDeckCatalogItem, saveDeckCatalogItem } from './deckStore.js';
 import {
   publishNextKanjiLesson as publishNextKanjiLessonRemote,
+  lockLastKanjiLesson as lockLastKanjiLessonRemote,
   readKanjiAvailability,
   readOwnProfile,
   removeOwnAvatar,
@@ -108,6 +109,7 @@ export default function App() {
   const [deckItems, setDeckItems] = useState(ITEMS);
   const [deckCatalogError, setDeckCatalogError] = useState('');
   const [kanjiUnlockedCount, setKanjiUnlockedCount] = useState(1);
+  const [selectedKanjiGroupId, setSelectedKanjiGroupId] = useState('');
   const [adminNotice, setAdminNotice] = useState(false);
   const cloudUserId = useRef(null);
   const profileUserId = useRef(null);
@@ -610,6 +612,20 @@ export default function App() {
     }
   }
 
+  async function lockKanjiLesson() {
+    if (!profile?.is_admin) return false;
+    if (!supabase || kanjiUnlockedCount <= 1) return false;
+    try {
+      const count = await lockLastKanjiLessonRemote(kanjiUnlockedCount);
+      setKanjiUnlockedCount(Math.max(1, Math.min(count, kanjiDeck.groups.length)));
+      notify('The last Kanji lesson has been locked globally.');
+      return true;
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'Could not lock the Kanji lesson.');
+      return false;
+    }
+  }
+
   function recordKanjiProgress(character, groupId, field, rating) {
     setStore((current) => {
       const previous = current.kanjiProgress?.[character] || {
@@ -675,9 +691,8 @@ export default function App() {
               prefs={prefs}
               unlockedGroupIds={kanjiDeck.groups.slice(0, kanjiUnlockedCount).map((group) => group.id)}
               kanjiProgress={store.kanjiProgress}
-              canManageLessons={Boolean(profile?.is_admin)}
-              onPublishNext={publishNextKanjiLesson}
-              onAdminRequest={() => setAdminNotice(true)}
+              selectedGroupId={selectedKanjiGroupId}
+              onChangeGroup={setSelectedKanjiGroupId}
               onViewKanji={(character, groupId) => recordKanjiProgress(character, groupId, 'views')}
               onRevealKanji={(character, groupId) => recordKanjiProgress(character, groupId, 'reveals')}
               onRateKanji={(character, groupId, rating) => recordKanjiProgress(character, groupId, 'rating', rating)}
@@ -686,7 +701,16 @@ export default function App() {
           )}
           {page === 'add' && <AddWords customItems={store.customItems || []} onAdd={addCustomItem} onDelete={deleteCustomItem} items={deckItems} />}
           {page === 'decks' && profile?.is_admin && (
-            <DeckAdmin items={deckItems} loadError={deckCatalogError} onSaveItem={saveDeckItem} onDeleteItem={deleteDeckItem} />
+            <DeckAdmin
+              items={deckItems}
+              loadError={deckCatalogError}
+              onSaveItem={saveDeckItem}
+              onDeleteItem={deleteDeckItem}
+              kanjiGroups={kanjiDeck.groups}
+              kanjiUnlockedCount={kanjiUnlockedCount}
+              onUnlockNextLesson={publishNextKanjiLesson}
+              onLockLastLesson={lockKanjiLesson}
+            />
           )}
           {page === 'account' && (
             <AccountPage
@@ -705,7 +729,21 @@ export default function App() {
         </main>
 
       </div>
-      <SettingsBar page={page} prefs={prefs} setPreference={setPreference} resetSection={resetSection} resetAll={resetAll} notify={notify} onDrillReset={() => setResetVersion((version) => version + 1)} customItems={store.customItems || []} items={deckItems} />
+      <SettingsBar
+        page={page}
+        prefs={prefs}
+        setPreference={setPreference}
+        resetSection={resetSection}
+        resetAll={resetAll}
+        notify={notify}
+        onDrillReset={() => setResetVersion((version) => version + 1)}
+        customItems={store.customItems || []}
+        items={deckItems}
+        kanjiGroups={kanjiDeck.groups}
+        kanjiUnlockedCount={kanjiUnlockedCount}
+        selectedKanjiGroupId={selectedKanjiGroupId}
+        onChangeKanjiGroup={setSelectedKanjiGroupId}
+      />
       <Toast message={toast} />
       {adminNotice && (
         <div className="account-overlay" role="presentation" onMouseDown={(event) => {

@@ -3,7 +3,7 @@ import kanjiDeck from '../../out/kanji.json';
 import AudioButtons from './AudioButtons.jsx';
 import { romaji } from '../core.js';
 import { getUnlockedKanjiGroups } from '../storage.js';
-import { PitchLine } from './shared.jsx';
+import { InfoButton, PitchLine } from './shared.jsx';
 
 const LICENSE_URLS = {
   'CC BY 2.0 FR': 'https://creativecommons.org/licenses/by/2.0/fr/',
@@ -114,9 +114,8 @@ export default function KanjiDeck({
   prefs,
   unlockedGroupIds,
   kanjiProgress,
-  canManageLessons,
-  onPublishNext,
-  onAdminRequest,
+  selectedGroupId,
+  onChangeGroup,
   onViewKanji,
   onRevealKanji,
   onRateKanji,
@@ -129,11 +128,13 @@ export default function KanjiDeck({
   const [rated, setRated] = useState(false);
   const seenCard = useRef('');
   const revealedThisVisit = useRef(false);
-  const [selectedGroupId, setSelectedGroupId] = useState(unlocked[unlocked.length - 1]);
-  const activeGroup = kanjiDeck.groups.find((group) => group.id === selectedGroupId && unlocked.includes(group.id))
+  // selectedGroupId is controlled by parent (via SettingsBar); fall back to last unlocked
+  const resolvedGroupId = (selectedGroupId && unlocked.includes(selectedGroupId))
+    ? selectedGroupId
+    : unlocked[unlocked.length - 1];
+  const activeGroup = kanjiDeck.groups.find((group) => group.id === resolvedGroupId && unlocked.includes(group.id))
     || kanjiDeck.groups.find((group) => group.id === unlocked[unlocked.length - 1]);
-  const nextGroup = kanjiDeck.groups[unlocked.length] || null;
-  const lessonGroups = kanjiDeck.groups.filter((group) => !group.additional);
+
   const cards = useMemo(() => {
     const groupCards = kanjiDeck.kanji.filter((entry) => entry.groupId === activeGroup.id);
     const search = query.trim().toLocaleLowerCase();
@@ -179,18 +180,9 @@ export default function KanjiDeck({
   }
 
   function changeGroup(groupId) {
-    setSelectedGroupId(groupId);
+    onChangeGroup(groupId);
     setQuery('');
     resetCards();
-  }
-
-  async function requestNextGroup() {
-    if (!nextGroup) return;
-    if (!canManageLessons) {
-      onAdminRequest();
-      return;
-    }
-    if (await onPublishNext()) changeGroup(nextGroup.id);
   }
 
   function toggleAnswer() {
@@ -213,37 +205,13 @@ export default function KanjiDeck({
         <div className="card kanji-deck">
           <div className="kanji-deck-heading">
             <h2>Kanji practice</h2>
-          </div>
-          <div className="kanji-group-controls">
-            <label className="kanji-search">
-              <span>Lesson</span>
-              <select value={activeGroup.id} onChange={(event) => changeGroup(event.target.value)}>
-                {kanjiDeck.groups.map((group, groupPosition) => (
-                  <option
-                    key={group.id}
-                    value={group.id}
-                    disabled={!unlocked.includes(group.id)}
-                  >
-                    {group.additional
-                      ? 'Extras'
-                      : `Lesson ${groupPosition + 1}`}
-                    {!unlocked.includes(group.id) ? ' · Locked' : ''}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="kanji-unlock">
-              <p className="hint">{Math.min(unlocked.length, lessonGroups.length)} / {lessonGroups.length} unlocked</p>
-              {nextGroup ? (
-                <button type="button" className="btn primary" onClick={requestNextGroup}>
-                  {canManageLessons
-                    ? (nextGroup.additional ? 'Publish extras globally' : 'Unlock next lesson globally')
-                    : 'Ask admin to unlock next lesson'}
-                </button>
-              ) : (
-                <p className="hint">All lessons unlocked</p>
-              )}
-            </div>
+            <InfoButton label="Kanji data credits">
+              <span className="credits-tooltip-content">
+                <span><b>Readings and meanings:</b> <a href="https://www.edrdg.org/kanjidic/kanjidic2.xml" target="_blank" rel="noopener noreferrer">KANJIDIC2</a> © EDRDG, CC BY-SA 4.0.</span>
+                <span><b>Pitch accents and examples:</b> <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener noreferrer">Kanjium</a> © Uros O., CC BY-SA 4.0.</span>
+                <span><b>Sentences:</b> <a href="https://tatoeba.org/" target="_blank" rel="noopener noreferrer">Tatoeba</a> contributors, CC BY 2.0 FR. Lesson availability is controlled by the admin.</span>
+              </span>
+            </InfoButton>
           </div>
           <details className="kanji-search-disclosure">
             <summary>Search this lesson</summary>
@@ -314,14 +282,7 @@ export default function KanjiDeck({
             </>
           )}
         </div>
-        <details className="kanji-attribution-details">
-          <summary className="kanji-attribution-summary">Data credits</summary>
-          <p className="kanji-attribution">
-            <a href="https://www.edrdg.org/kanjidic/kanjidic2.xml" target="_blank" rel="noopener noreferrer">KANJIDIC2</a>
-            {' '}© EDRDG · <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener noreferrer">Kanjium</a>
-            {' '}© Uros O. · CC BY-SA 4.0
-          </p>
-        </details>
+
       </div>
     </section>
   );
