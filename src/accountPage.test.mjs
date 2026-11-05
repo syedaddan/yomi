@@ -44,8 +44,27 @@ test('renders signed-in account actions and the compact Kanji settings dock', as
       onChangeKanjiGroup: () => {},
     }));
     assert.match(settingsHtml, /Furigana/);
+    assert.match(settingsHtml, /Search/);
     assert.doesNotMatch(settingsHtml, /settings-controls-row/);
     assert.doesNotMatch(settingsHtml, /Reset all settings/);
+
+    const { default: KanjiDeck } = await vite.ssrLoadModule('/src/components/KanjiDeck.jsx');
+    const kanjiDeckHtml = renderToString(React.createElement(KanjiDeck, {
+      prefs: DEFAULT_PREFS,
+      unlockedGroupIds: ['lesson-01'],
+      kanjiProgress: {},
+      selectedGroupId: 'lesson-01',
+      onChangeGroup: () => {},
+      searchQuery: '',
+      onSearchChange: () => {},
+      onViewKanji: () => {},
+      onRevealKanji: () => {},
+      onRateKanji: () => {},
+      notify: () => {},
+    }));
+    assert.match(kanjiDeckHtml, /kanji-stage/);
+    assert.match(kanjiDeckHtml, /kanji-stage-main/);
+    assert.doesNotMatch(kanjiDeckHtml, /kanji-audio-button/);
 
     const { default: DeckAdmin } = await vite.ssrLoadModule('/src/components/DeckAdmin.jsx');
     const deckAdminHtml = renderToString(React.createElement(DeckAdmin, {

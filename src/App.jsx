@@ -110,6 +110,7 @@ export default function App() {
   const [deckCatalogError, setDeckCatalogError] = useState('');
   const [kanjiUnlockedCount, setKanjiUnlockedCount] = useState(1);
   const [selectedKanjiGroupId, setSelectedKanjiGroupId] = useState('');
+  const [kanjiSearchQuery, setKanjiSearchQuery] = useState('');
   const [adminNotice, setAdminNotice] = useState(false);
   const cloudUserId = useRef(null);
   const profileUserId = useRef(null);
@@ -692,7 +693,12 @@ export default function App() {
               unlockedGroupIds={kanjiDeck.groups.slice(0, kanjiUnlockedCount).map((group) => group.id)}
               kanjiProgress={store.kanjiProgress}
               selectedGroupId={selectedKanjiGroupId}
-              onChangeGroup={setSelectedKanjiGroupId}
+              onChangeGroup={(id) => {
+                setSelectedKanjiGroupId(id);
+                setKanjiSearchQuery('');
+              }}
+              searchQuery={kanjiSearchQuery}
+              onSearchChange={setKanjiSearchQuery}
               onViewKanji={(character, groupId) => recordKanjiProgress(character, groupId, 'views')}
               onRevealKanji={(character, groupId) => recordKanjiProgress(character, groupId, 'reveals')}
               onRateKanji={(character, groupId, rating) => recordKanjiProgress(character, groupId, 'rating', rating)}
@@ -742,7 +748,12 @@ export default function App() {
         kanjiGroups={kanjiDeck.groups}
         kanjiUnlockedCount={kanjiUnlockedCount}
         selectedKanjiGroupId={selectedKanjiGroupId}
-        onChangeKanjiGroup={setSelectedKanjiGroupId}
+        onChangeKanjiGroup={(id) => {
+          setSelectedKanjiGroupId(id);
+          setKanjiSearchQuery('');
+        }}
+        kanjiSearchQuery={kanjiSearchQuery}
+        onChangeKanjiSearch={setKanjiSearchQuery}
       />
       <Toast message={toast} />
       {adminNotice && (

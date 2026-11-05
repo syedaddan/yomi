@@ -79,6 +79,8 @@ export default function SettingsBar({
   kanjiUnlockedCount = 1,
   selectedKanjiGroupId = '',
   onChangeKanjiGroup,
+  kanjiSearchQuery = '',
+  onChangeKanjiSearch,
 }) {
   const [openSection, setOpenSection] = useState('');
   const bar = useRef(null);
@@ -231,6 +233,40 @@ export default function SettingsBar({
                   <InfoButton label="Lesson unlock information">
                     Kanji lesson unlocks and locks are controlled globally by the admin in the Decks tab.
                   </InfoButton>
+                </div>
+              )}
+              {page === 'kanji' && (
+                <div className="display-control">
+                  <SettingPanel
+                    id="kanji-search"
+                    label="Search"
+                    summary={kanjiSearchQuery ? `"${kanjiSearchQuery}"` : ''}
+                    open={openSection === 'kanji-search'}
+                    onToggle={() => toggleSection('kanji-search')}
+                    onReset={() => onChangeKanjiSearch?.('')}
+                  >
+                    <div className="kanji-search-popover">
+                      <label className="account-form-field">
+                        <span>Search lesson kanji</span>
+                        <input
+                          type="search"
+                          value={kanjiSearchQuery}
+                          onChange={(event) => onChangeKanjiSearch?.(event.target.value)}
+                          placeholder="Kanji, reading, or meaning"
+                          autoFocus
+                        />
+                      </label>
+                      {kanjiSearchQuery && (
+                        <button
+                          className="btn quiet"
+                          type="button"
+                          onClick={() => onChangeKanjiSearch?.('')}
+                        >
+                          Clear search
+                        </button>
+                      )}
+                    </div>
+                  </SettingPanel>
                 </div>
               )}
               {page === 'drill' && (

@@ -565,3 +565,11 @@ body.no-settings-dock { padding-bottom: calc(24px + env(safe-area-inset-bottom, 
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Kanji Centered Stage & Search Popover */
+#page-kanji { display: flex; flex: 1; flex-direction: column; }
+.kanji-stage { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 440px; }
+.kanji-stage-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 18px 0 8px; min-height: 220px; width: 100%; }
+.kanji-answer { width: 100%; display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.kanji-search-popover { display: flex; flex-direction: column; gap: 10px; min-width: 260px; }
+.kanji-search-popover input { width: 100%; min-height: 38px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink); font: inherit; }

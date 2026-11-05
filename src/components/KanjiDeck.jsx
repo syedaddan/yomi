@@ -116,13 +116,14 @@ export default function KanjiDeck({
   kanjiProgress,
   selectedGroupId,
   onChangeGroup,
+  searchQuery = '',
+  onSearchChange,
   onViewKanji,
   onRevealKanji,
   onRateKanji,
   notify,
 }) {
   const unlocked = getUnlockedKanjiGroups(unlockedGroupIds, kanjiDeck.groups);
-  const [query, setQuery] = useState('');
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [rated, setRated] = useState(false);
@@ -137,7 +138,7 @@ export default function KanjiDeck({
 
   const cards = useMemo(() => {
     const groupCards = kanjiDeck.kanji.filter((entry) => entry.groupId === activeGroup.id);
-    const search = query.trim().toLocaleLowerCase();
+    const search = searchQuery.trim().toLocaleLowerCase();
     if (!search) return groupCards;
     return groupCards.filter((entry) => {
       const searchable = [
@@ -149,7 +150,7 @@ export default function KanjiDeck({
       ].join(' ').toLocaleLowerCase();
       return searchable.includes(search);
     });
-  }, [activeGroup.id, query]);
+  }, [activeGroup.id, searchQuery]);
   const card = cards[index] || cards[0];
   const cardProgress = card ? kanjiProgress?.[card.character] : null;
 
@@ -168,10 +169,9 @@ export default function KanjiDeck({
     setRevealed(false);
   }
 
-  function changeSearch(value) {
-    setQuery(value);
+  useEffect(() => {
     resetCards();
-  }
+  }, [searchQuery, activeGroup.id]);
 
   function moveCard(nextIndex) {
     setIndex(nextIndex);
@@ -181,7 +181,6 @@ export default function KanjiDeck({
 
   function changeGroup(groupId) {
     onChangeGroup(groupId);
-    setQuery('');
     resetCards();
   }
 
@@ -201,8 +200,8 @@ export default function KanjiDeck({
 
   return (
     <section className="panel" id="page-kanji">
-      <div className="stack">
-        <div className="card kanji-deck">
+      <div className="card stage kanji-stage" aria-live="polite">
+        <div className="stage-top">
           <div className="kanji-deck-heading">
             <h2>Kanji practice</h2>
             <InfoButton label="Kanji data credits">
@@ -213,76 +212,81 @@ export default function KanjiDeck({
               </span>
             </InfoButton>
           </div>
-          <details className="kanji-search-disclosure">
-            <summary>Search this lesson</summary>
-            <label className="kanji-search">
-              <span>Kanji, reading, or word</span>
-              <input
-                type="search"
-                value={query}
-                onChange={(event) => changeSearch(event.target.value)}
-                placeholder="Search"
-              />
-            </label>
-          </details>
-
-          {!card ? (
-            <p className="empty">No kanji in this group match that search.</p>
-          ) : (
-            <>
-              <div className="kanji-card" aria-live="polite">
-                <div className="kanji-card-status">
-                  <span>{index + 1} / {cards.length}</span>
-                </div>
-                <div className="kanji-prompt-row">
-                  <div className="kanji-prompt" lang="ja">{card.character}</div>
-                  <AudioButtons item={card.audio?.character} label={card.character} onError={notify} />
-                </div>
-                <button type="button" className="btn primary" onClick={toggleAnswer}>
-                  {revealed ? 'Hide answer' : 'Show answer'}
-                </button>
-                {revealed && (
-                  <div className="kanji-answer">
-                    <p className="kanji-progress-count hint">
-                      Viewed {cardProgress?.views || 0} times · Rated {cardProgress?.n || 0} times
-                    </p>
-                    <p className="kanji-meaning">{card.meanings.join(' · ')}</p>
-                    <div className="kanji-reading-grid">
-                      <ReadingList label="On'yomi" readings={card.on} audio={card.audio?.readings} showRomaji={prefs.romaji} notify={notify} />
-                      <ReadingList label="Kun'yomi" readings={card.kun} audio={card.audio?.readings} showRomaji={prefs.romaji} notify={notify} />
-                    </div>
-                    <div className="kanji-examples-heading">
-                      <h3>Examples</h3>
-                    </div>
-                    <div className="kanji-examples">
-                      {card.words.map((word) => (
-                        <KanjiExample
-                          key={`${word.word}-${word.reading}`}
-                          word={word}
-                          showFurigana={prefs.furigana}
-                          showRomaji={prefs.romaji}
-                          showMarks={prefs.marks}
-                          notify={notify}
-                        />
-                      ))}
-                    </div>
-                    <div className="kanji-rating" role="group" aria-label={`Rate ${card.character}`}>
-                      <span>{rated ? 'Saved for this review.' : 'How well did you know it?'}</span>
-                      <button type="button" className="btn miss" disabled={rated} onClick={() => rateKanji('miss')}>Missed</button>
-                      <button type="button" className="btn" disabled={rated} onClick={() => rateKanji('slow')}>Slow</button>
-                      <button type="button" className="btn primary" disabled={rated} onClick={() => rateKanji('got')}>Got it</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="kanji-navigation">
-                <button type="button" className="btn" disabled={index === 0} onClick={() => moveCard(index - 1)}>Previous</button>
-                <button type="button" className="btn primary" disabled={index >= cards.length - 1} onClick={() => moveCard(index + 1)}>Next</button>
-              </div>
-            </>
+          {card && (
+            <div className="kanji-card-status">
+              <span>{index + 1} / {cards.length}{searchQuery ? ' (filtered)' : ''}</span>
+            </div>
           )}
         </div>
 
+        {!card ? (
+          <div className="stage-main kanji-stage-main">
+            <p className="empty">
+              No kanji in this lesson match {searchQuery ? `"${searchQuery}"` : 'your search'}.
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="btn quiet"
+                  style={{ display: 'block', margin: '10px auto' }}
+                  onClick={() => onSearchChange?.('')}
+                >
+                  Clear search
+                </button>
+              )}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="stage-main kanji-stage-main">
+              <div className="kanji-prompt-row">
+                <div className="kanji-prompt" lang="ja">{card.character}</div>
+                {revealed && (
+                  <AudioButtons item={card.audio?.character} label={card.character} onError={notify} />
+                )}
+              </div>
+              <button type="button" className="btn primary" onClick={toggleAnswer}>
+                {revealed ? 'Hide answer' : 'Show answer'}
+              </button>
+              {revealed && (
+                <div className="kanji-answer">
+                  <p className="kanji-progress-count hint">
+                    Viewed {cardProgress?.views || 0} times · Rated {cardProgress?.n || 0} times
+                  </p>
+                  <p className="kanji-meaning">{card.meanings.join(' · ')}</p>
+                  <div className="kanji-reading-grid">
+                    <ReadingList label="On'yomi" readings={card.on} audio={card.audio?.readings} showRomaji={prefs.romaji} notify={notify} />
+                    <ReadingList label="Kun'yomi" readings={card.kun} audio={card.audio?.readings} showRomaji={prefs.romaji} notify={notify} />
+                  </div>
+                  <div className="kanji-examples-heading">
+                    <h3>Examples</h3>
+                  </div>
+                  <div className="kanji-examples">
+                    {card.words.map((word) => (
+                      <KanjiExample
+                        key={`${word.word}-${word.reading}`}
+                        word={word}
+                        showFurigana={prefs.furigana}
+                        showRomaji={prefs.romaji}
+                        showMarks={prefs.marks}
+                        notify={notify}
+                      />
+                    ))}
+                  </div>
+                  <div className="kanji-rating" role="group" aria-label={`Rate ${card.character}`}>
+                    <span>{rated ? 'Saved for this review.' : 'How well did you know it?'}</span>
+                    <button type="button" className="btn miss" disabled={rated} onClick={() => rateKanji('miss')}>Missed</button>
+                    <button type="button" className="btn" disabled={rated} onClick={() => rateKanji('slow')}>Slow</button>
+                    <button type="button" className="btn primary" disabled={rated} onClick={() => rateKanji('got')}>Got it</button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="kanji-navigation">
+              <button type="button" className="btn" disabled={index === 0} onClick={() => moveCard(index - 1)}>Previous</button>
+              <button type="button" className="btn primary" disabled={index >= cards.length - 1} onClick={() => moveCard(index + 1)}>Next</button>
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
