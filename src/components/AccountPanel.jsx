@@ -18,7 +18,9 @@ export default function AccountPanel({
   onRetrySync,
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [promptDismissed, setPromptDismissed] = useState(false);
+  const [promptDismissed, setPromptDismissed] = useState(() => {
+    try { return sessionStorage.getItem('yomi-sign-in-seen') === '1'; } catch { return false; }
+  });
   const [email, setEmail] = useState('');
   const [emailSent, setEmailSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -86,6 +88,7 @@ export default function AccountPanel({
   }
 
   function closePrompt() {
+    try { sessionStorage.setItem('yomi-sign-in-seen', '1'); } catch {}
     setPromptDismissed(true);
     setDialogOpen(false);
   }
@@ -159,24 +162,24 @@ export default function AccountPanel({
               </>
             ) : (
               <>
-                <h2 id="account-title">Save your Yomi progress</h2>
-                <p className="hint">Create an account or sign in to sync progress and move it between devices. It takes one tap with Google or one email link—no password.</p>
+                <h2 id="account-title">Save your progress</h2>
+                <p className="hint">Sign in to sync your ratings and custom words between devices. One tap with Google, or a link to your email — no password needed.</p>
                 {!configured ? (
-                  <p className="account-error" role="status">Account sign-in is not configured yet. You can keep using Yomi on this device.</p>
+                  <p className="account-error" role="status">Account sign-in is not configured. You can keep studying on this device without an account.</p>
                 ) : (
                   <>
                     <button className="btn primary account-action" type="button" disabled={busy} onClick={signInWithGoogle}>Continue with Google</button>
                     <form className="account-email-form" onSubmit={sendMagicLink}>
-                      <label htmlFor="account-email">Or get a sign-in link by email</label>
+                      <label htmlFor="account-email">Sign in by email instead</label>
                       <input id="account-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" />
-                      <button className="btn account-action" type="submit" disabled={busy}>{busy ? 'Sending…' : 'Email me a sign-in link'}</button>
+                      <button className="btn account-action" type="submit" disabled={busy}>{busy ? 'Sending…' : 'Send sign-in link'}</button>
                     </form>
-                    {emailSent && <p className="account-success" role="status">Check your inbox for your sign-in link. You can close this and continue studying.</p>}
+                    {emailSent && <p className="account-success" role="status">Check your inbox — you can close this and keep studying while you wait.</p>}
                   </>
                 )}
                 {syncStatus === 'error' && <p className="account-error" role="alert">{syncError}</p>}
                 {error && <p className="account-error" role="alert">{error}</p>}
-                <button className="account-dismiss" type="button" onClick={closePrompt}>Continue without an account</button>
+                <button className="account-dismiss" type="button" onClick={closePrompt}>Continue without signing in</button>
               </>
             )}
           </section>

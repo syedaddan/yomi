@@ -41,6 +41,8 @@
 .profile-picture-editor { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .profile-picture-large { width: 92px; height: 92px; border: 2px solid var(--line); border-radius: 50%; object-fit: cover; }
 .profile-picture-editor .stack { gap: 8px; }
+.avatar-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.avatar-btn { width: 100%; text-align: center; cursor: pointer; }
 .account-form-field { display: flex; flex-direction: column; gap: 6px; font-size: .9rem; font-weight: 650; }
 .account-form-field input, .account-form-field textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink); font: inherit; font-weight: 400; }
 .account-form-field textarea { resize: vertical; }
@@ -271,6 +273,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .reset-all { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex: none; min-height: 36px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); font-size: .78rem; font-weight: 650; white-space: nowrap; }
 .reset-all span { font-size: 1rem; }
 .reset-all:hover { background: var(--surface-2); }
+.theme-toggle { display: inline-grid; place-items: center; min-width: 36px; min-height: 36px; padding: 4px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); font-size: 1rem; cursor: pointer; flex: none; }
+.theme-toggle:hover { background: var(--surface-2); }
 
 /* look-alikes */
 .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; width: min(560px, 100%); }
@@ -342,6 +346,10 @@ td.num, th.num { text-align: right; font-family: var(--f-mono); font-variant-num
 .kanji-example .hint { margin-top: 4px; font-size: .72rem; }
 .kanji-navigation { justify-content: center; flex-wrap: wrap; }
 .kanji-attribution { color: var(--muted); font-size: .73rem; text-align: center; }
+.kanji-attribution-details { text-align: center; }
+.kanji-attribution-summary { width: fit-content; margin: 0 auto; color: var(--muted); font-size: .73rem; cursor: pointer; font-weight: 600; list-style: none; }
+.kanji-attribution-summary::-webkit-details-marker { display: none; }
+.kanji-attribution-details[open] .kanji-attribution { margin-top: 4px; }
 .kanji-attribution a { color: var(--accent); }
 .add-words-card { display: flex; flex-direction: column; gap: 18px; max-width: 780px; margin-inline: auto; }
 .add-words-intro { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

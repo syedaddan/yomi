@@ -134,25 +134,27 @@ export default function AccountPage({
             {profile?.avatarUrl
               ? <img src={profile.avatarUrl} alt="Your profile" className="profile-picture-large" />
               : <span className="profile-picture-large profile-picture-placeholder" aria-hidden="true">{(displayName || user.email || '?').slice(0, 1).toUpperCase()}</span>}
-            <div className="stack">
-              <label className="btn">
+            <div className="avatar-actions">
+              <label className="btn avatar-btn">
                 Change picture
                 <input className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={uploadAvatar} />
               </label>
-              {profile?.avatar_path && <button className="btn" type="button" disabled={busy} onClick={async () => {
-                setBusy(true);
-                setError('');
-                setSuccess('');
-                try {
-                  await onRemoveAvatar();
-                  setSuccess('Profile picture removed.');
-                } catch (removeError) {
-                  setError(removeError instanceof Error ? removeError.message : 'Could not remove your picture.');
-                } finally {
-                  setBusy(false);
-                }
-              }}>Remove picture</button>}
-              <small className="hint">JPG, PNG, or WebP; up to 5 MB. Only you can view it.</small>
+              {profile?.avatar_path && (
+                <button className="btn avatar-btn" type="button" disabled={busy} onClick={async () => {
+                  setBusy(true);
+                  setError('');
+                  setSuccess('');
+                  try {
+                    await onRemoveAvatar();
+                    setSuccess('Profile picture removed.');
+                  } catch (removeError) {
+                    setError(removeError instanceof Error ? removeError.message : 'Could not remove your picture.');
+                  } finally {
+                    setBusy(false);
+                  }
+                }}>Remove picture</button>
+              )}
+              <small className="hint">JPG, PNG, or WebP · up to 5 MB · visible only to you.</small>
             </div>
           </div>
           <label className="account-form-field">

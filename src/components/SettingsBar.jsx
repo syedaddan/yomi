@@ -67,7 +67,19 @@ function ToggleSetting({ label, pressed, onClick, info, id }) {
 
 export default function SettingsBar({ page, prefs, setPreference, resetSection, resetAll, onDrillReset, notify, customItems = [], items = ITEMS }) {
   const [openSection, setOpenSection] = useState('');
+  const [theme, setTheme] = useState(() => (typeof document !== 'undefined' ? document.documentElement.getAttribute('data-theme') : null) || 'auto');
   const bar = useRef(null);
+
+  function cycleTheme() {
+    const next = theme === 'auto' ? 'dark' : theme === 'dark' ? 'light' : 'auto';
+    setTheme(next);
+    if (next === 'auto') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', next);
+    }
+    try { localStorage.setItem('yomi-theme', next); } catch {}
+  }
   const allItems = useMemo(() => [...items, ...customItems], [items, customItems]);
   const deckThemes = useMemo(() => [...new Set(allItems.map((item) => `${item.deck}|${item.theme}`))], [allItems]);
   const themeNames = useMemo(() => {
@@ -181,6 +193,13 @@ export default function SettingsBar({ page, prefs, setPreference, resetSection, 
                 />
               )}
             </div>
+            <button
+              className="theme-toggle"
+              type="button"
+              aria-label={`Theme: ${theme === 'auto' ? 'Auto' : theme === 'dark' ? 'Dark' : 'Light'}`}
+              title={`Theme: ${theme === 'auto' ? 'Auto (follows system)' : theme === 'dark' ? 'Dark — click for Light' : 'Light — click for Auto'}`}
+              onClick={cycleTheme}
+            >{theme === 'dark' ? '🌙' : theme === 'light' ? '☀️' : '🌓'}</button>
             <button
               className="reset-all"
               type="button"

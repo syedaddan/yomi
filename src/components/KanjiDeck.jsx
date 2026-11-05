@@ -314,11 +314,14 @@ export default function KanjiDeck({
             </>
           )}
         </div>
-        <p className="kanji-attribution">
-          <a href="https://www.edrdg.org/kanjidic/kanjidic2.xml" target="_blank" rel="noopener noreferrer">KANJIDIC2</a>
-          {' '}© EDRDG · <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener noreferrer">Kanjium</a>
-          {' '}© Uros O. · CC BY-SA 4.0
-        </p>
+        <details className="kanji-attribution-details">
+          <summary className="kanji-attribution-summary">Data credits</summary>
+          <p className="kanji-attribution">
+            <a href="https://www.edrdg.org/kanjidic/kanjidic2.xml" target="_blank" rel="noopener noreferrer">KANJIDIC2</a>
+            {' '}© EDRDG · <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noopener noreferrer">Kanjium</a>
+            {' '}© Uros O. · CC BY-SA 4.0
+          </p>
+        </details>
       </div>
     </section>
   );

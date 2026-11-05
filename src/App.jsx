@@ -192,10 +192,24 @@ export default function App() {
         const remote = await readCloudStore(userId);
         if (!active || cloudUserId.current !== userId) return;
         const localKey = userStorageKey(userId);
-        const local = hasStoredStore(localKey)
+        const hasUserLocal = hasStoredStore(localKey);
+        const local = hasUserLocal
           ? loadStore(localKey)
           : previousUserId ? loadStore() : normalizeStore(storeRef.current);
+        // If a user-specific local key already exists for this account on this
+        // device, it was written after the user last resolved a migration, so
+        // skip the conflict dialog and silently adopt the cloud copy.
+        if (hasUserLocal) {
+          const resolved = remote || local;
+          if (remote) saveStore(remote, localKey);
+          setStore(resolved);
+          setPrefs(preferencesFrom(resolved));
+          setSyncStatus('ready');
+          return;
+        }
+        // First sign-in on this device — check for genuine conflict.
         if (remote && stableStringify(local) === stableStringify(remote)) {
+          saveStore(remote, localKey);
           setStore(remote);
           setPrefs(preferencesFrom(remote));
           setSyncStatus('ready');
@@ -208,19 +222,20 @@ export default function App() {
           setSyncStatus('ready');
           return;
         }
-        if (remote || hasSavedData(local)) {
-          setPendingCloudStore(remote);
-          setMigrationRequired(true);
-          setSyncStatus('choice');
+        if (!remote && !hasSavedData(local)) {
+          const fresh = emptyStore();
+          await writeCloudStore(userId, fresh);
+          if (!active || cloudUserId.current !== userId) return;
+          saveStore(fresh, localKey);
+          setStore(fresh);
+          setPrefs(preferencesFrom(fresh));
+          setSyncStatus('ready');
           return;
         }
-        const fresh = emptyStore();
-        await writeCloudStore(userId, fresh);
-        if (!active || cloudUserId.current !== userId) return;
-        saveStore(fresh, localKey);
-        setStore(fresh);
-        setPrefs(preferencesFrom(fresh));
-        setSyncStatus('ready');
+        // Genuine first-time conflict: local anonymous data vs. cloud data.
+        setPendingCloudStore(remote);
+        setMigrationRequired(true);
+        setSyncStatus('choice');
       } catch (error) {
         if (!active || cloudUserId.current !== userId) return;
         cloudUserId.current = null;
