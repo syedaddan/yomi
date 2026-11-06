@@ -13,6 +13,12 @@ Priorities are ordered. The first item remains the active priority; completed wo
 - [x] **Admin shared deck catalog**: add, edit, and remove shared Hiragana, Katakana, and phrase deck items through the admin-only Decks tab.
 - [x] **Remove male VOICEVOX audio** from the app and generated data. Keep human recordings, including male recordings, when available; use the female VOICEVOX voice as the synthetic option.
 - [x] **Polish the settings dock and logo**: keep Romaji and Pitch marks information buttons fully visible, and use the app's blue accent instead of orange in the Yomi mark.
+- [x] **Light/dark theme toggle in header pill**: cycle system, dark, and light modes; housed with account avatar/button in a unified pill in the top header.
+- [x] **Kanji curriculum locking and unlocking in Decks admin**: admin controls in collapsible sections on the Decks tab to unlock next and lock last lessons sequentially.
+- [x] **Bottom dock lesson selector and lesson search for Kanji**: moved lesson picking and lesson filtering to the bottom dock with info buttons.
+- [x] **Centered Kanji card layout & recall audio protection**: vertically and horizontally centered kanji prompt matching the reading drill; hidden character audio before reveal.
+- [x] **Declutter sign-in and suppress redundant migration dialogs**: device-cached account verification prevents re-prompting users who already migrated.
+- [x] **Mandatory local browser verification workflow**: contributors must verify UI and functional changes in a local browser before running tests, committing, and pushing.
 
 ## Existing roadmap
 
