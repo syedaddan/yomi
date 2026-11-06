@@ -218,6 +218,7 @@ The prioritized project roadmap, including deck expansion and user-added vocabul
 
 ## 11. Notes for contributors
 
+- **Local browser verification**: After making changes, always start the local dev server (`npm run dev`), open the site in a local browser, and visually/functionally verify the changes first-hand before running tests, committing, and pushing.
 - Edit the React components and styles under `src/`; do not edit generated `public/audio/` or `dist/`.
 - Keep `src/core.js` pure and covered by `npm test`; add a test with every change to mora, pitch, or romaji logic.
 - Keep the honesty about pitch quality in the UI voice information. Do not claim the synthetic voices are always right.

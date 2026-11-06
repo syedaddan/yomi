@@ -163,7 +163,8 @@ For commit `0598523`:
 ## Suggested continuation
 
 1. Start by checking `git status`, `git log --oneline -6`, and `origin/main`.
-2. If the user asks for an implementation, use the normal `npm test`, `npm run build`, and `git diff --check` workflow.
+2. After making any change, always launch the local development server (`npm run dev`), open the app in a local browser, and visually inspect and verify the behavior first-hand before running `npm test`, building, committing, or pushing.
+3. If the user asks for an implementation, use the normal browser inspection -> `npm test` -> `npm run build` -> `git diff --check` workflow.
 3. If user reports cloud custom-word insert errors, first ask whether migration 004 was applied successfully; do not re-run 002/003.
 4. For Kansai playback regressions, inspect `src/audioPriority.js`, `src/audio.js`, and `src/components/Drill.jsx`, and add a focused test in `src/audioPriority.test.mjs`.
 5. Do not stage or alter `supabase/.temp/`.
