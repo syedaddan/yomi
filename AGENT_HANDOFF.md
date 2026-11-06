@@ -169,6 +169,15 @@ For browser speech, the user explicitly chose the browser's built-in Japanese sp
 
 - Documented requirement in `README.md`, `AGENT_HANDOFF.md`, and `project-memory.md` that every change must be verified in a local browser first-hand before running tests, committing, and pushing.
 
+### J. Record-and-compare pitch contour and mora-level scoring
+
+- **Pure JS pitch detector (`src/pitchDetection.js`)**: Implemented Normalized Square Difference Function (NSDF) autocorrelation with parabolic peak interpolation operating on windowed audio buffers (70 Hz – 500 Hz speech vocal range). Filters silence/noise using RMS gating and bounds check.
+- **Mora segmentation and scoring**: Automatically divides voiced audio segments into mora intervals, extracts median $F_0$ per mora, evaluates initial pitch rise/fall, accent drop (kifuku ↘), and computes mora-level accuracy (0–100%) with actionable feedback tips.
+- **Microphone recording abstraction (`src/audioRecorder.js`)**: Wraps `navigator.mediaDevices.getUserMedia` and `MediaRecorder` with Web Audio `decodeAudioData` to yield raw PCM Float32Array audio for pitch analysis and playable audio URL for learner playback, with clear permission and error mapping.
+- **SVG pitch contour visualization (`src/components/PitchContourGraph.jsx`)**: Responsive SVG chart displaying mora boundary columns, mora kana labels, reference pitch tiers (High / Low) with accent drop arrows, learner pitch curves, and mora status chips.
+- **Drill card integration (`src/components/RecordAndCompare.jsx`)**: Embedded into revealed Drill cards with toggle button (`🎙️ Record & compare pitch <kbd>R</kbd>`), recording duration timer, learner audio review playback, and detailed mora-by-mora score breakdown.
+- **Unit & component test coverage**: Added `src/pitchDetection.test.mjs`, `src/audioRecorder.test.mjs`, and `src/recordAndCompare.test.mjs`, bringing total unit tests to 43 passing tests.
+
 ## Supabase setup actions confirmed by user
 
 The user worked through setup in Supabase SQL Editor and PowerShell:

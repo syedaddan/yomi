@@ -3,6 +3,7 @@ import { median, particleRomaji, romaji } from '../core.js';
 import { DECK_NAMES, ITEMS, itemFromCustomRecord } from '../data.js';
 import { playItem, stopAudio } from '../audio.js';
 import { InfoButton, PitchLine, VoiceButtons } from './shared.jsx';
+import RecordAndCompare from './RecordAndCompare.jsx';
 
 const SPRINT_MS = 60000;
 
@@ -314,6 +315,11 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
                         {item.alt && ' The primary Play button prefers the Kansai recording. Other voice uses your selected Tokyo recording or synthetic/browser voice.'}
                       </InfoButton>
                     </div>
+                    <RecordAndCompare
+                      item={item}
+                      onPlayReference={() => playItem(item, { voice: hasCuratedRecording ? prefs.voice : 'female', slow, onError: notify })}
+                      notify={notify}
+                    />
                     <p className="note">
                       {item.accents.length > 1 ? `Dictionary lists multiple accents [${item.accents.join('], [')}]. Shown: [${item.accents[0]}]. ` : ''}
                       {item.chunks.some((chunk) => chunk.a == null) ? `No dictionary pitch for ${item.chunks.filter((chunk) => chunk.a == null).map((chunk) => chunk.w).join(', ')}. ` : ''}
