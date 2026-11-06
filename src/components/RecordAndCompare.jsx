@@ -17,7 +17,6 @@ export default function RecordAndCompare({
   autoRecord = false,
   onAutoRecordConsumed,
 }) {
-  const [open, setOpen] = useState(true);
   const [recording, setRecording] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -38,7 +37,6 @@ export default function RecordAndCompare({
   // Trigger auto-recording if requested from front-of-card action
   useEffect(() => {
     if (autoRecord && !recording && !analyzing) {
-      setOpen(true);
       startRecording();
       onAutoRecordConsumed?.();
     }
@@ -87,10 +85,7 @@ export default function RecordAndCompare({
       if (event.target.closest('input, select, textarea')) return;
       if (event.key.toLowerCase() === 'r') {
         event.preventDefault();
-        if (!open) {
-          setOpen(true);
-          startRecording();
-        } else if (recording) {
+        if (recording) {
           stopRecording();
         } else {
           startRecording();
@@ -99,7 +94,7 @@ export default function RecordAndCompare({
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, recording, maxSeconds, morae.length, targetPattern]);
+  }, [recording, maxSeconds, morae.length, targetPattern]);
 
   async function startRecording() {
     setError('');
@@ -174,21 +169,8 @@ export default function RecordAndCompare({
   }
 
   return (
-    <div className={`record-compare-panel${open ? ' is-open' : ''}`} id="record-compare">
-      <div className="record-compare-toggle-row">
-        <button
-          className={`btn ${open ? 'active' : ''}`}
-          type="button"
-          aria-expanded={open}
-          aria-controls="record-compare-body"
-          onClick={() => setOpen((prev) => !prev)}
-        >
-          🎙️ Record & compare pitch <kbd>R</kbd>
-        </button>
-      </div>
-
-      {open && (
-        <div className="record-compare-body" id="record-compare-body">
+    <div className="record-compare-panel" id="record-compare">
+      <div className="record-compare-body" id="record-compare-body">
           <div className="record-compare-header">
             <div className="record-actions">
               {!recording ? (
@@ -279,7 +261,6 @@ export default function RecordAndCompare({
             </div>
           )}
         </div>
-      )}
     </div>
   );
 }

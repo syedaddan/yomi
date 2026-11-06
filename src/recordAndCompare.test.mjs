@@ -92,9 +92,8 @@ test('renders RecordAndCompare toggle and revealed Drill card integration', asyn
     }));
 
     assert.match(recordHtml, /record-compare/);
-    assert.match(recordHtml, /Record &amp; compare pitch/);
-    assert.match(recordHtml, /aria-expanded="true"/);
     assert.match(recordHtml, /record-btn/);
+    assert.doesNotMatch(recordHtml, /Record &amp; compare pitch/);
 
     // Verify Drill includes RecordAndCompare when rendered
     const { default: Drill } = await vite.ssrLoadModule('/src/components/Drill.jsx');
