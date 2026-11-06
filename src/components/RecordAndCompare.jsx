@@ -14,8 +14,10 @@ export default function RecordAndCompare({
   onPlayReference,
   notify,
   onRecordingChange,
+  autoRecord = false,
+  onAutoRecordConsumed,
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [recording, setRecording] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -32,6 +34,15 @@ export default function RecordAndCompare({
 
   const morae = getItemMorae(item);
   const targetPattern = getItemPitchPattern(item);
+
+  // Trigger auto-recording if requested from front-of-card action
+  useEffect(() => {
+    if (autoRecord && !recording && !analyzing) {
+      setOpen(true);
+      startRecording();
+      onAutoRecordConsumed?.();
+    }
+  }, [autoRecord]);
 
   // Clean up recording and audio URLs on unmount or item change
   useEffect(() => {

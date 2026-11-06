@@ -586,6 +586,12 @@ body.no-settings-dock { padding-bottom: calc(24px + env(safe-area-inset-bottom, 
   display: flex;
   justify-content: center;
 }
+.reveal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
 .record-compare-body {
   display: flex;
   flex-direction: column;
