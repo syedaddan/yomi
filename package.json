@@ -10,7 +10,7 @@
     "build": "vite build",
     "postbuild": "node scripts/copy-404.mjs",
     "preview": "vite preview",
-    "test": "node --test src/core.test.mjs src/customWords.test.mjs src/cloudStore.test.mjs src/storage.test.mjs src/accountPage.test.mjs src/audioPriority.test.mjs src/deckCatalog.test.mjs src/kanji.test.mjs src/kanjiAudio.test.mjs src/voicevox.test.mjs"
+    "test": "node --test src/core.test.mjs src/customWords.test.mjs src/cloudStore.test.mjs src/storage.test.mjs src/accountPage.test.mjs src/audioPriority.test.mjs src/deckCatalog.test.mjs src/kanji.test.mjs src/kanjiAudio.test.mjs src/voicevox.test.mjs src/pitchDetection.test.mjs src/audioRecorder.test.mjs src/recordAndCompare.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
