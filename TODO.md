@@ -19,10 +19,10 @@ Priorities are ordered. The first item remains the active priority; completed wo
 - [x] **Centered Kanji card layout & recall audio protection**: vertically and horizontally centered kanji prompt matching the reading drill; hidden character audio before reveal.
 - [x] **Declutter sign-in and suppress redundant migration dialogs**: device-cached account verification prevents re-prompting users who already migrated.
 - [x] **Mandatory local browser verification workflow**: contributors must verify UI and functional changes in a local browser before running tests, committing, and pushing.
-- [x] **Record-and-compare**: capture microphone audio, show the learner's pitch contour against the reference, and provide a mora-level score.
 
 ## Existing roadmap
 
+- [ ] **Record-and-compare**: capture microphone audio, show the learner's pitch contour against the reference, and provide a mora-level score.
 - [ ] **More real audio**: find permissively licensed Tokyo-accent clips for Katakana words and phrases, and use them ahead of synthetic audio.
 - [ ] **Spaced repetition**: replace weighted random selection with a real system such as Leitner or FSRS.
 - [ ] **Sentence deck**: add short graded sentences with chunk highlighting, beyond the existing 40 phrases.

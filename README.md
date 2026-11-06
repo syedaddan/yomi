@@ -25,7 +25,6 @@ Curated human recordings are preferred when available. Custom words use browser 
 - **Drill section**: mix decks freely (Hiragana 193, Katakana 169, Phrases 40, plus personal words), filter by themes (Home, Food, People, Places, Time, Nature, Body, IT & Work, Verbs, Adjectives, Tech, Food & Drink, Travel, Clothes, School & Fun, Look-alikes, Greetings, Class & Daily ...).
   - Modes: Read (time measured to reveal), Flash (hidden after N ms), Sprint (60 s).
   - Reveal shows pitch marks, romaji, meaning, and audio controls. Kansai audio plays first when available; the other voice uses the selected curated Tokyo recording or synthetic voice.
-  - **Record-and-compare pitch contour**: capture microphone audio directly on revealed cards (or tap `R`), see your fundamental frequency ($F_0$) contour plotted in real time against the reference Tokyo pitch tiers, and receive a mora-level pitch score with per-mora correctness breakdown and audio playback.
   - Rate: Missed / Slow / Got it (keys 1/2/3). Progress persists locally and syncs to your account when signed in.
   - **Back / Forward** (buttons and ← → keys). History stack of the last 100 cards; revisited cards show revealed and are never double-counted. Forward on a fresh card = Skip (no rating recorded).
   - Keys: Space/Enter reveal, P play, 1/2/3 rate, ←/→ back/forward, X (sprint miss).

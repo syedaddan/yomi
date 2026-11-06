@@ -3,7 +3,6 @@ import { median, particleRomaji, romaji } from '../core.js';
 import { DECK_NAMES, ITEMS, itemFromCustomRecord } from '../data.js';
 import { playItem, stopAudio } from '../audio.js';
 import { InfoButton, PitchLine, VoiceButtons } from './shared.jsx';
-import RecordAndCompare from './RecordAndCompare.jsx';
 
 const SPRINT_MS = 60000;
 
@@ -34,7 +33,6 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
   const [position, setPosition] = useState(-1);
   const [phase, setPhase] = useState('front');
   const [slow, setSlow] = useState(false);
-  const [autoRecord, setAutoRecord] = useState(false);
   const [session, setSession] = useState({ n: 0, got: 0, slow: 0, miss: 0, mora: 0, ms: [] });
   const [sprint, setSprint] = useState(null);
   const recent = useRef([]);
@@ -228,10 +226,6 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
         rate(({ 1: 'miss', 2: 'slow', 3: 'got' })[event.key]);
       } else if (phase === 'revealed' && event.key.toLowerCase() === 'p' && item) {
         playItem(item, { voice: hasCuratedRecording ? prefs.voice : 'female', onError: notify });
-      } else if (event.key.toLowerCase() === 'r' && item) {
-        event.preventDefault();
-        if (phase !== 'revealed') reveal();
-        setAutoRecord(true);
       }
     }
     document.addEventListener('keydown', onKeyDown);
@@ -301,7 +295,6 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
                     <div className="audio-control-group">
                       <div className="audio-row">
                         <button className="btn primary" data-play="main" onClick={() => playItem(item, { voice: hasCuratedRecording ? prefs.voice : 'female', slow, onError: notify })}>▶ Play <kbd>P</kbd></button>
-                        <button className="btn" data-record="main" onClick={() => setAutoRecord(true)}>🎙️ Record <kbd>R</kbd></button>
                         <button className="btn" aria-pressed={slow} onClick={() => setSlow((value) => !value)}>{slow ? 'Slow: on' : 'Slow: off'}</button>
                         {item.alt && <button className="btn" onClick={() => playItem(item, { voice: prefs.voice, alternate: true, slow, onError: notify })}>▶ Other voice</button>}
                       </div>
@@ -321,13 +314,6 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
                         {item.alt && ' The primary Play button prefers the Kansai recording. Other voice uses your selected Tokyo recording or synthetic/browser voice.'}
                       </InfoButton>
                     </div>
-                    <RecordAndCompare
-                      item={item}
-                      onPlayReference={() => playItem(item, { voice: hasCuratedRecording ? prefs.voice : 'female', slow, onError: notify })}
-                      notify={notify}
-                      autoRecord={autoRecord}
-                      onAutoRecordConsumed={() => setAutoRecord(false)}
-                    />
                     <p className="note">
                       {item.accents.length > 1 ? `Dictionary lists multiple accents [${item.accents.join('], [')}]. Shown: [${item.accents[0]}]. ` : ''}
                       {item.chunks.some((chunk) => chunk.a == null) ? `No dictionary pitch for ${item.chunks.filter((chunk) => chunk.a == null).map((chunk) => chunk.w).join(', ')}. ` : ''}
@@ -350,10 +336,7 @@ export default function Drill({ prefs, setPreference, store, setStore, notify, a
                     </div>
                     {phase === 'masked' && <p className="note">Say it aloud, then reveal.</p>}
                     {prefs.mode === 'flash' && phase === 'front' && <div className="timer-bar"><i /></div>}
-                    <div className="reveal-actions">
-                      <button className="btn primary" id="reveal" onClick={reveal}>Reveal <kbd>Space</kbd></button>
-                      <button className="btn" id="record-reveal" onClick={() => { reveal(); setAutoRecord(true); }}>🎙️ Record <kbd>R</kbd></button>
-                    </div>
+                    <button className="btn primary" id="reveal" onClick={reveal}>Reveal <kbd>Space</kbd></button>
                   </>
                 )}
               </div>
